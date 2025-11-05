@@ -1,5 +1,4 @@
 <?php
-
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UserController;
@@ -9,6 +8,13 @@ use App\Http\Controllers\Pemilik\KostController as PemilikKostController;
 use App\Http\Controllers\Front\LandingController;
 use App\Http\Controllers\Front\FrontController;
 use App\Http\Controllers\Admin\PenyewaController;
+
+Route::get('/', [FrontController::class, 'landing'])->name('landing');
+Route::get('/detail/{id}', [FrontController::class, 'show'])->name('detail');
+Route::get('/search', [FrontController::class, 'search'])->name('kost.search');
+
+// API untuk mendapatkan data kost dalam format JSON (untuk peta)
+Route::get('/api/kosts', [FrontController::class, 'getKostsJson'])->name('api.kosts');
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', UserController::class);
@@ -30,12 +36,7 @@ Route::middleware(['auth', 'role:pemilik'])->prefix('pemilik')->name('pemilik.')
     Route::get('/reviews/{review}', [App\Http\Controllers\Pemilik\ReviewController::class, 'show'])->name('reviews.show');
 });
 
-Route::get('/', [FrontController::class, 'landing'])->name('landing');
-Route::get('/detail/{id}', [FrontController::class, 'show'])->name('detail');
-Route::get('/search', [FrontController::class, 'search'])->name('kost.search');
 
-// API untuk mendapatkan data kost dalam format JSON (untuk peta)
-Route::get('/api/kosts', [FrontController::class, 'getKostsJson'])->name('api.kosts');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
