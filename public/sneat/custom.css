@@ -1,0 +1,68 @@
+:root {
+    --bs-primary: #67a597 !important;
+}
+
+.btn-primary,
+.bg-primary {
+    background-color: #67a597 !important;
+    border-color: #67a597 !important;
+}
+
+/* 🌸 Ubah warna utama sidebar menjadi 67a597 */
+.menu-vertical .menu-item.active>.menu-link {
+    background-color: rgba(227, 0, 131, 0.15) !important;
+    /* sedikit transparan */
+    color: #67a597 !important;
+    font-weight: 600;
+}
+
+/* Hover efek lebih lembut */
+.menu-vertical .menu-item:hover>.menu-link {
+    background-color: rgba(227, 0, 131, 0.1) !important;
+    color: #67a597 !important;
+}
+
+/* Warna ikon saat aktif */
+.menu-vertical .menu-item.active .menu-icon,
+.menu-vertical .menu-item:hover .menu-icon {
+    color: #67a597 !important;
+}
+
+/* Default link warna */
+.menu-vertical .menu-link {
+    color: #5c6c75 !important;
+    /* warna teks normal */
+    transition: all 0.3s ease;
+}
+
+/* Active border kiri kecil (opsional, biar elegan) */
+.menu-vertical .menu-item.active>.menu-link::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background-color: #67a597;
+    border-radius: 0 3px 3px 0;
+}
+
+/* Ganti garis biru di sisi kanan menu aktif */
+.menu-vertical .menu-item.active::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    /* posisikan di kanan */
+    top: 0;
+    width: 4px;
+    /* ketebalan garis */
+    height: 100%;
+    background-color: #67a597;
+    /* warna sesuai tema kamu */
+    border-radius: 3px 0 0 3px;
+}
+
+/* (Opsional) Hilangkan kalau template sudah punya garis default di kanan */
+.menu-vertical .menu-item.active {
+    border-right: none !important;
+}
