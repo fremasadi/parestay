@@ -251,7 +251,7 @@
                 </div>
 
                 @if($booking->status === 'aktif')
-                <a href="https://wa.me/{{ $booking->kost->pemilik->user->phone ?? '' }}" 
+                <a href="https://wa.me/{{ $booking->kost->pemilik->no_hp ?? '' }}" 
                    target="_blank"
                    class="block w-full px-4 py-2 bg-green-500 text-white text-center rounded-lg font-semibold hover:bg-green-600 transition">
                     💬 Chat WhatsApp

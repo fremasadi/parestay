@@ -17,7 +17,7 @@
             </svg>
             <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum Ada Booking</h3>
             <p class="text-gray-500 mb-6">Anda belum melakukan booking kost</p>
-            <a href="{{ route('home') }}" class="inline-block px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700">
+            <a href="{{ route('landing') }}" class="inline-block px-6 py-3 bg-teal-600 text-white rounded-lg font-semibold hover:bg-teal-700">
                 Cari Kost Sekarang
             </a>
         </div>

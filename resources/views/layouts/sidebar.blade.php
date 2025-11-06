@@ -47,31 +47,34 @@
                 <span class="menu-header-text">Manajemen Properti</span>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('admin.kost.*') ? 'active' : '' }}">
-                <a href="{{ route('admin.kost.index') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-building-house"></i>
-                    <div>Daftar Kost</div>
+            <li class="menu-item ">
+                <a href="" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-receipt"></i>
+                    <div></div>
                 </a>
             </li>
+
+
 
             {{-- Menu Header - Transaksi (Coming Soon) --}}
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Transaksi</span>
             </li>
 
-            <li class="menu-item disabled">
-                <a href="#" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('admin.booking.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.booking.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-receipt"></i>
-                    <div>Booking <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
+                    <div>Booking</div>
                 </a>
             </li>
 
-            <li class="menu-item disabled">
-                <a href="#" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('admin.pembayaran.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.pembayaran.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                    <div>Pembayaran <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
+                    <div>Pembayaran</div>
                 </a>
             </li>
+
 
             <li class="menu-item disabled">
                 <a href="#" class="menu-link">
@@ -119,17 +122,17 @@
                 <span class="menu-header-text">Transaksi</span>
             </li>
 
-            <li class="menu-item disabled">
-                <a href="#" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('pemilik.booking.*') ? 'active' : '' }}">
+                <a href="{{ route('pemilik.booking.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-receipt"></i>
-                    <div>Booking <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
+                    <div>Penyewaan Aktif <span class="badge badge-center rounded-pill bg-label-secondary ms-2"></span></div>
                 </a>
             </li>
 
-            <li class="menu-item disabled">
-                <a href="#" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('pemilik.pembayaran.*') ? 'active' : '' }}">
+                <a href="{{ route('pemilik.pembayaran.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-credit-card"></i>
-                    <div>Pembayaran <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
+                    <div>Pembayaran Aktif</div>
                 </a>
             </li>
 

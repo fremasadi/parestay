@@ -11,6 +11,10 @@ use App\Http\Controllers\Admin\PenyewaController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Front\HistoryController;
+use App\Http\Controllers\Admin\BookingController as AdminBookingController;
+use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
+use App\Http\Controllers\Pemilik\BookingController as PemilikBookingController;
+use App\Http\Controllers\Pemilik\PembayaranController as PemilikPembayaranController;
 
 Route::get('/', [FrontController::class, 'landing'])->name('landing');
 Route::get('/detail/{id}', [FrontController::class, 'show'])->name('detail');
@@ -28,6 +32,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/reviews/statistics', [App\Http\Controllers\Admin\ReviewController::class, 'statistics'])->name('reviews.statistics');
     Route::get('/reviews/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'show'])->name('reviews.show');
     Route::delete('/reviews/{review}', [App\Http\Controllers\Admin\ReviewController::class, 'destroy'])->name('reviews.destroy');
+    Route::resource('booking', AdminBookingController::class);
+        Route::get('pembayaran', [AdminPembayaranController::class, 'index'])->name('pembayaran.index');
+
+
 
 });
 
@@ -37,6 +45,10 @@ Route::middleware(['auth', 'role:pemilik'])->prefix('pemilik')->name('pemilik.')
     Route::get('/reviews/statistics', [App\Http\Controllers\Pemilik\ReviewController::class, 'statistics'])->name('reviews.statistics');
     Route::get('/reviews/kost/{kost}', [App\Http\Controllers\Pemilik\ReviewController::class, 'byKost'])->name('reviews.by-kost');
     Route::get('/reviews/{review}', [App\Http\Controllers\Pemilik\ReviewController::class, 'show'])->name('reviews.show');
+
+        Route::get('/booking', [PemilikBookingController::class, 'index'])->name('booking.index');
+    Route::get('/pembayaran', [PemilikPembayaranController::class, 'index'])->name('pembayaran.index');
+
 });
 
 
