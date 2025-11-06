@@ -42,7 +42,7 @@
                 </a>
             </li>
 
-            {{-- Menu Header - Manajemen Properti --}}
+            <!-- {{-- Menu Header - Manajemen Properti --}}
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Manajemen Properti</span>
             </li>
@@ -52,7 +52,7 @@
                     <i class="menu-icon tf-icons bx bx-receipt"></i>
                     <div></div>
                 </a>
-            </li>
+            </li> -->
 
 
 
