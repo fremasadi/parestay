@@ -1,9 +1,9 @@
 <?php
-// app/Http/Controllers/PaymentController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
+use App\Models\Booking;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,74 +19,111 @@ class PaymentController extends Controller
     }
 
     /**
-     * Callback dari Midtrans
+     * Create Payment (Redirect dari Booking)
      */
-    public function callback(Request $request)
+    public function create($bookingId)
     {
-        try {
-            $notification = $request->all();
+        $booking = Booking::with(['kost', 'user'])->findOrFail($bookingId);
+        
+        // Check if already has pending/success payment
+        $existingPayment = Pembayaran::where('booking_id', $booking->id)
+            ->whereIn('transaction_status', ['pending', 'settlement', 'capture'])
+            ->first();
             
-            Log::info('Midtrans Callback', $notification);
-
-            $orderId = $notification['order_id'];
-            $transactionStatus = $notification['transaction_status'];
-            $fraudStatus = $notification['fraud_status'] ?? null;
-
-            $pembayaran = Pembayaran::where('order_id', $orderId)->firstOrFail();
-
-            DB::beginTransaction();
-
-            // Update data pembayaran
-            $pembayaran->update([
-                'transaction_id' => $notification['transaction_id'] ?? null,
-                'payment_type' => $notification['payment_type'] ?? null,
-                'transaction_status' => $transactionStatus,
-                'fraud_status' => $fraudStatus,
-                'transaction_time' => $notification['transaction_time'] ?? now(),
-                'settlement_time' => $notification['settlement_time'] ?? null,
-                'bank' => $notification['bank'] ?? $notification['va_numbers'][0]['bank'] ?? null,
-                'va_number' => $notification['va_numbers'][0]['va_number'] ?? null,
-                'midtrans_response' => $notification,
-            ]);
-
-            $booking = $pembayaran->booking;
-
-            // Update status booking berdasarkan status transaksi
-            if ($transactionStatus == 'capture') {
-                if ($fraudStatus == 'accept') {
-                    $booking->update(['status' => 'aktif']);
-                }
-            } elseif ($transactionStatus == 'settlement') {
-                $booking->update(['status' => 'aktif']);
-                $pembayaran->update(['settlement_time' => now()]);
-            } elseif (in_array($transactionStatus, ['cancel', 'deny', 'expire'])) {
-                $booking->update(['status' => 'dibatalkan']);
-                // Kembalikan slot kost
-                $booking->kost->increment('slot_tersedia');
-            } elseif ($transactionStatus == 'pending') {
-                $booking->update(['status' => 'pending']);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Notification processed'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Midtrans Callback Error: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
+        if ($existingPayment) {
+            return redirect()->route('payment.show', $existingPayment->id);
         }
+
+        // Generate Order ID
+        $orderId = 'KOST-' . $booking->id . '-' . time();
+
+        // Customer Details
+        $customerDetails = [
+            'first_name' => $booking->user->name,
+            'email' => $booking->user->email,
+            'phone' => $booking->no_hp,
+            'billing_address' => [
+                'address' => $booking->alamat,
+            ]
+        ];
+
+        // Item Details
+        $itemDetails = [
+            [
+                'id' => $booking->kost_id,
+                'price' => (int) $booking->total_harga,
+                'quantity' => 1,
+                'name' => 'Sewa Kost - ' . $booking->kost->nama . ' (' . $booking->durasi . ' hari)',
+            ]
+        ];
+
+        // Create transaction
+        $result = $this->midtrans->createTransaction(
+            $orderId,
+            (int) $booking->total_harga,
+            $customerDetails,
+            $itemDetails
+        );
+
+        if (!$result['success']) {
+            return back()->with('error', 'Gagal membuat pembayaran: ' . $result['message']);
+        }
+
+        // Save to database
+        $pembayaran = Pembayaran::create([
+            'booking_id' => $booking->id,
+            'order_id' => $orderId,
+            'gross_amount' => $booking->total_harga,
+            'transaction_status' => 'pending',
+            'payment_url' => $result['payment_url'],
+            'midtrans_response' => json_encode($result),
+        ]);
+
+        return redirect()->route('payment.show', $pembayaran->id);
     }
 
     /**
-     * Finish payment - redirect dari Midtrans
+     * Show Payment Page
+     */
+    public function show($id)
+    {
+        $pembayaran = Pembayaran::with(['booking.kost', 'booking.user'])->findOrFail($id);
+        
+        // Get latest status from Midtrans
+        $statusResult = $this->midtrans->getTransactionStatus($pembayaran->order_id);
+        
+        if ($statusResult['success']) {
+            $this->updatePaymentStatus($pembayaran, $statusResult['data']);
+        }
+
+        return view('payment.show', compact('pembayaran'));
+    }
+
+    /**
+     * Payment Callback from Midtrans
+     */
+    public function callback(Request $request)
+    {
+        $serverKey = config('midtrans.server_key');
+        $hashed = hash('sha512', $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
+        
+        if ($hashed !== $request->signature_key) {
+            return response()->json(['message' => 'Invalid signature'], 403);
+        }
+
+        $pembayaran = Pembayaran::where('order_id', $request->order_id)->first();
+        
+        if (!$pembayaran) {
+            return response()->json(['message' => 'Payment not found'], 404);
+        }
+
+        $this->updatePaymentStatus($pembayaran, $request->all());
+
+        return response()->json(['message' => 'Callback processed']);
+    }
+
+    /**
+     * Payment Finish (User redirected here after payment)
      */
     public function finish(Request $request)
     {
@@ -94,87 +131,120 @@ class PaymentController extends Controller
         $pembayaran = Pembayaran::where('order_id', $orderId)->first();
 
         if (!$pembayaran) {
-            return redirect()->route('home')->with('error', 'Pembayaran tidak ditemukan.');
+            return redirect()->route('home')->with('error', 'Pembayaran tidak ditemukan');
         }
 
-        // Cek status terbaru dari Midtrans
-        try {
-            $status = $this->midtrans->getTransactionStatus($orderId);
-            
-            $pembayaran->update([
-                'transaction_status' => $status->transaction_status,
-                'fraud_status' => $status->fraud_status ?? null,
-            ]);
-
-            if (in_array($status->transaction_status, ['settlement', 'capture'])) {
-                $pembayaran->booking->update(['status' => 'aktif']);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('Get Transaction Status Error: ' . $e->getMessage());
+        // Get latest status
+        $statusResult = $this->midtrans->getTransactionStatus($orderId);
+        
+        if ($statusResult['success']) {
+            $this->updatePaymentStatus($pembayaran, $statusResult['data']);
         }
 
-        return redirect()->route('booking.show', $pembayaran->booking_id)
-            ->with('success', 'Terima kasih! Pembayaran Anda sedang diproses.');
+        return redirect()->route('payment.show', $pembayaran->id);
     }
 
     /**
-     * Unfinish payment - user kembali tanpa menyelesaikan
+     * Check Payment Status (AJAX)
      */
-    public function unfinish(Request $request)
-    {
-        $orderId = $request->order_id;
-        $pembayaran = Pembayaran::where('order_id', $orderId)->first();
-
-        if ($pembayaran) {
-            return redirect()->route('booking.payment', $pembayaran->booking_id)
-                ->with('warning', 'Pembayaran belum selesai. Silakan lanjutkan pembayaran.');
-        }
-
-        return redirect()->route('home');
-    }
-
-    /**
-     * Error payment
-     */
-    public function error(Request $request)
-    {
-        $orderId = $request->order_id;
-        $pembayaran = Pembayaran::where('order_id', $orderId)->first();
-
-        if ($pembayaran) {
-            return redirect()->route('booking.payment', $pembayaran->booking_id)
-                ->with('error', 'Terjadi kesalahan dalam proses pembayaran. Silakan coba lagi.');
-        }
-
-        return redirect()->route('home')
-            ->with('error', 'Terjadi kesalahan dalam proses pembayaran.');
-    }
-
-    /**
-     * Check payment status
-     */
-    public function checkStatus($orderId)
+    public function checkStatus($id)
     {
         try {
-            $pembayaran = Pembayaran::where('order_id', $orderId)->firstOrFail();
+            $pembayaran = Pembayaran::with('booking')->findOrFail($id);
             
             // Get latest status from Midtrans
-            $status = $this->midtrans->getTransactionStatus($orderId);
+            $statusResult = $this->midtrans->getTransactionStatus($pembayaran->order_id);
             
-            return response()->json([
-                'success' => true,
-                'status' => $status->transaction_status,
-                'payment_type' => $status->payment_type ?? null,
-                'va_number' => $status->va_numbers[0]->va_number ?? null,
-                'bank' => $status->va_numbers[0]->bank ?? null,
+            Log::info('Check Payment Status', [
+                'order_id' => $pembayaran->order_id,
+                'current_status' => $pembayaran->transaction_status,
+                'midtrans_result' => $statusResult
             ]);
+            
+            if ($statusResult['success']) {
+                $this->updatePaymentStatus($pembayaran, $statusResult['data']);
+                
+                // Refresh data setelah update
+                $pembayaran->refresh();
+                
+                return response()->json([
+                    'success' => true,
+                    'status' => $pembayaran->transaction_status,
+                    'message' => $pembayaran->getStatusLabel(),
+                    'is_success' => $pembayaran->isSuccess(),
+                ]);
+            }
 
-        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Gagal mengecek status pembayaran: ' . ($statusResult['message'] ?? 'Unknown error'),
+            ], 500);
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking payment status: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Update Payment Status
+     */
+    private function updatePaymentStatus($pembayaran, $data)
+    {
+        $transactionStatus = $data->transaction_status ?? $data['transaction_status'] ?? 'pending';
+        $fraudStatus = $data->fraud_status ?? $data['fraud_status'] ?? null;
+        $paymentType = $data->payment_type ?? $data['payment_type'] ?? null;
+
+        $updateData = [
+            'transaction_id' => $data->transaction_id ?? $data['transaction_id'] ?? null,
+            'transaction_status' => $transactionStatus,
+            'fraud_status' => $fraudStatus,
+            'payment_type' => $paymentType,
+            'midtrans_response' => is_array($data) ? $data : json_decode(json_encode($data), true),
+        ];
+
+        // Bank info for VA
+        if (isset($data->va_numbers) || isset($data['va_numbers'])) {
+            $vaNumbers = $data->va_numbers ?? $data['va_numbers'];
+            if (!empty($vaNumbers)) {
+                $vaNumber = is_array($vaNumbers) ? $vaNumbers[0] : $vaNumbers[0];
+                $updateData['bank'] = $vaNumber->bank ?? $vaNumber['bank'] ?? null;
+                $updateData['va_number'] = $vaNumber->va_number ?? $vaNumber['va_number'] ?? null;
+            }
+        }
+
+        // Transaction time
+        if (isset($data->transaction_time) || isset($data['transaction_time'])) {
+            $updateData['transaction_time'] = $data->transaction_time ?? $data['transaction_time'];
+        }
+
+        // Settlement time & Update Booking Status
+        if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
+            $updateData['settlement_time'] = now();
+            
+            // Update booking status menjadi aktif
+            $pembayaran->booking->update([
+                'status' => 'aktif',
+            ]);
+
+            // Kurangi slot tersedia di kost
+            $kost = $pembayaran->booking->kost;
+            if ($kost->slot_tersedia > 0) {
+                $kost->decrement('slot_tersedia');
+            }
+        }
+
+        // Jika pembayaran gagal/expired/cancel
+        if (in_array($transactionStatus, ['deny', 'expire', 'cancel', 'failure'])) {
+            $pembayaran->booking->update([
+                'status' => 'dibatalkan',
+            ]);
+        }
+
+        $pembayaran->update($updateData);
     }
 }

@@ -1,238 +1,201 @@
 @extends('layouts.front')
 
-@section('title', 'Detail Booking | Parestay')
+@section('title', 'Detail Booking - Parestay')
 
 @section('content')
-
 <main class="pt-24 pb-12 container mx-auto px-4 max-w-5xl">
     
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-3xl font-bold">Detail Booking</h1>
-            <p class="text-gray-600">Order ID: {{ $booking->pembayaran->order_id ?? '-' }}</p>
-        </div>
-        <a href="{{ route('booking.index') }}" class="text-teal-600 hover:text-teal-700">
-            ← Kembali ke Daftar Booking
+    <!-- <div class="mb-6">
+        <a href="{{ route('booking.index') }}" class="text-teal-600 hover:text-teal-800 flex items-center gap-2">
+            ← Kembali ke Riwayat Booking
         </a>
-    </div>
-
-    <!-- Alert Messages -->
-    @if(session('success'))
-        <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if(session('info'))
-        <div class="mb-6 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
-            {{ session('info') }}
-        </div>
-    @endif
-
-    <!-- Status Badge -->
-    <div class="mb-6">
-        <div class="inline-flex items-center gap-3 px-6 py-3 rounded-lg
-            @if($booking->status == 'pending') bg-yellow-100 border border-yellow-300
-            @elseif($booking->status == 'aktif') bg-green-100 border border-green-300
-            @elseif($booking->status == 'selesai') bg-blue-100 border border-blue-300
-            @else bg-red-100 border border-red-300
-            @endif">
-            <span class="text-2xl">
-                @if($booking->status == 'pending') ⏳
-                @elseif($booking->status == 'aktif') ✓
-                @elseif($booking->status == 'selesai') 🏁
-                @else ✗
-                @endif
-            </span>
-            <div>
-                <p class="font-bold text-lg
-                    @if($booking->status == 'pending') text-yellow-700
-                    @elseif($booking->status == 'aktif') text-green-700
-                    @elseif($booking->status == 'selesai') text-blue-700
-                    @else text-red-700
-                    @endif">
-                    Status: {{ ucfirst($booking->status) }}
-                </p>
-                <p class="text-sm
-                    @if($booking->status == 'pending') text-yellow-600
-                    @elseif($booking->status == 'aktif') text-green-600
-                    @elseif($booking->status == 'selesai') text-blue-600
-                    @else text-red-600
-                    @endif">
-                    @if($booking->status == 'pending')
-                        Menunggu pembayaran
-                    @elseif($booking->status == 'aktif')
-                        Booking aktif dan sedang berjalan
-                    @elseif($booking->status == 'selesai')
-                        Periode sewa telah selesai
-                    @else
-                        Booking dibatalkan
-                    @endif
-                </p>
-            </div>
-        </div>
-    </div>
+    </div> -->
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             
-            <!-- Info Kost -->
+            <!-- Status Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-4">Informasi Kost</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Detail Booking</h2>
+                    <span class="px-4 py-2 rounded-full text-sm font-semibold {{ $booking->getStatusBadgeClass() }}">
+                        {{ $booking->getStatusLabel() }}
+                    </span>
+                </div>
+
+                @if($booking->status === 'aktif')
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-green-800">Booking Aktif</p>
+                            <p class="text-sm text-green-700">Pembayaran telah dikonfirmasi. Silakan hubungi pemilik kost untuk proses check-in.</p>
+                        </div>
+                    </div>
+                </div>
+                @elseif($booking->status === 'pending')
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-yellow-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-yellow-800">Menunggu Pembayaran</p>
+                            <p class="text-sm text-yellow-700">Silakan selesaikan pembayaran untuk mengaktifkan booking Anda.</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                <div class="space-y-4">
+                    <div class="border-b pb-3">
+                        <p class="text-sm text-gray-500 mb-1">Booking ID</p>
+                        <p class="font-mono font-semibold">#{{ $booking->id }}</p>
+                    </div>
+                    
+                    <div class="border-b pb-3">
+                        <p class="text-sm text-gray-500 mb-1">Tanggal Booking</p>
+                        <p class="font-semibold">{{ $booking->created_at->format('d F Y, H:i') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kost Information -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Informasi Kost</h3>
+                
                 <div class="flex gap-4 mb-4">
-                    @if(!empty($booking->kost->images))
+                    @if(!empty($booking->kost->images) && count($booking->kost->images) > 0)
                         <img src="{{ asset('storage/' . $booking->kost->images[0]) }}" 
-                             class="w-32 h-32 object-cover rounded-lg" 
+                             class="w-24 h-24 object-cover rounded-lg" 
                              alt="{{ $booking->kost->nama }}">
                     @endif
                     <div class="flex-1">
-                        <h3 class="font-bold text-xl mb-2">{{ $booking->kost->nama }}</h3>
-                        <p class="text-gray-600 mb-2">📍 {{ $booking->kost->alamat }}</p>
-                        <div class="flex gap-2">
-                            <span class="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm">
-                                {{ ucfirst($booking->kost->jenis_kost) }}
-                            </span>
-                            @if($booking->kost->terverifikasi)
-                                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
-                                    ✓ Terverifikasi
-                                </span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-                <a href="{{ route('kost.show', $booking->kost_id) }}" 
-                   class="text-teal-600 hover:underline text-sm">
-                    Lihat detail kost →
-                </a>
-            </div>
-
-            <!-- Info Penyewa -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-4">Data Penyewa</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Nama Lengkap</p>
-                        <p class="font-semibold">{{ $booking->user->name }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Email</p>
-                        <p class="font-semibold">{{ $booking->user->email }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">No. KTP</p>
-                        <p class="font-semibold">{{ $booking->no_ktp }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">No. HP</p>
-                        <p class="font-semibold">{{ $booking->no_hp }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Pekerjaan</p>
-                        <p class="font-semibold">{{ $booking->pekerjaan ?? '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Foto KTP</p>
-                        @if($booking->foto_ktp)
-                            <a href="{{ asset('storage/' . $booking->foto_ktp) }}" 
-                               target="_blank" 
-                               class="text-teal-600 hover:underline text-sm">
-                                Lihat foto KTP
-                            </a>
-                        @else
-                            <p class="text-gray-500 text-sm">-</p>
-                        @endif
-                    </div>
-                    <div class="col-span-2">
-                        <p class="text-sm text-gray-600 mb-1">Alamat</p>
-                        <p class="font-semibold">{{ $booking->alamat }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Periode Sewa -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-4">Periode Sewa</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Tanggal Mulai</p>
-                        <p class="font-semibold text-lg">{{ $booking->tanggal_mulai->format('d M Y') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Tanggal Selesai</p>
-                        <p class="font-semibold text-lg">{{ $booking->tanggal_selesai->format('d M Y') }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Durasi</p>
-                        <p class="font-semibold text-lg">{{ $booking->durasi }} hari</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Dibuat pada</p>
-                        <p class="font-semibold">{{ $booking->created_at->format('d M Y H:i') }}</p>
-                    </div>
-                </div>
-
-                @if($booking->status == 'aktif')
-                    @php
-                        $sisaHari = now()->diffInDays($booking->tanggal_selesai, false);
-                    @endphp
-                    <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p class="text-sm text-blue-700">
-                            ⏰ Sisa waktu sewa: <strong>{{ max(0, ceil($sisaHari)) }} hari</strong>
-                        </p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Payment Info -->
-            @if($booking->pembayaran)
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-4">Informasi Pembayaran</h2>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Order ID</p>
-                        <p class="font-semibold font-mono text-sm">{{ $booking->pembayaran->order_id }}</p>
-                    </div>
-                    @if($booking->pembayaran->transaction_id)
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Transaction ID</p>
-                        <p class="font-semibold font-mono text-sm">{{ $booking->pembayaran->transaction_id }}</p>
-                    </div>
-                    @endif
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Metode Pembayaran</p>
-                        <p class="font-semibold">{{ $booking->pembayaran->payment_type ? ucwords(str_replace('_', ' ', $booking->pembayaran->payment_type)) : '-' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Status Transaksi</p>
-                        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold
-                            @if($booking->pembayaran->transaction_status == 'pending') bg-yellow-100 text-yellow-700
-                            @elseif(in_array($booking->pembayaran->transaction_status, ['settlement', 'capture'])) bg-green-100 text-green-700
-                            @else bg-red-100 text-red-700
-                            @endif">
-                            {{ ucfirst($booking->pembayaran->transaction_status) }}
+                        <h4 class="font-bold text-lg mb-1">{{ $booking->kost->nama }}</h4>
+                        <p class="text-gray-600 text-sm mb-2">{{ $booking->kost->alamat }}</p>
+                        <span class="inline-block px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-xs font-semibold">
+                            {{ ucfirst($booking->kost->jenis_kost) }}
                         </span>
                     </div>
-                    @if($booking->pembayaran->va_number)
-                    <div class="col-span-2">
-                        <p class="text-sm text-gray-600 mb-1">Virtual Account</p>
-                        <div class="flex items-center gap-2">
-                            <p class="font-bold font-mono text-lg">{{ $booking->pembayaran->va_number }}</p>
-                            <span class="px-2 py-1 bg-gray-100 rounded text-xs">{{ strtoupper($booking->pembayaran->bank) }}</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                    <div>
+                        <p class="text-sm text-gray-500">Tanggal Mulai</p>
+                        <p class="font-semibold">{{ $booking->tanggal_mulai->format('d M Y') }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Tanggal Selesai</p>
+                        <p class="font-semibold">{{ $booking->tanggal_selesai->format('d M Y') }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Durasi Sewa</p>
+                        <p class="font-semibold">{{ $booking->durasi }} hari</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Sisa Waktu</p>
+                        <p class="font-semibold">
+                            @if($booking->status === 'aktif')
+                                {{ now()->diffInDays($booking->tanggal_selesai, false) > 0 ? now()->diffInDays($booking->tanggal_selesai) . ' hari' : 'Berakhir hari ini' }}
+                            @else
+                                -
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Penyewa -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Data Penyewa</h3>
+                
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Nama Lengkap</p>
+                            <p class="font-semibold">{{ $booking->user->name }}</p>
                         </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Email</p>
+                            <p class="font-semibold">{{ $booking->user->email }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">No. HP</p>
+                            <p class="font-semibold">{{ $booking->no_hp }}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">No. KTP</p>
+                            <p class="font-semibold">{{ $booking->no_ktp }}</p>
+                        </div>
+                        @if($booking->pekerjaan)
+                        <div>
+                            <p class="text-sm text-gray-500">Pekerjaan</p>
+                            <p class="font-semibold">{{ $booking->pekerjaan }}</p>
+                        </div>
+                        @endif
                     </div>
-                    @endif
-                    @if($booking->pembayaran->transaction_time)
+
                     <div>
-                        <p class="text-sm text-gray-600 mb-1">Waktu Transaksi</p>
-                        <p class="font-semibold text-sm">{{ $booking->pembayaran->transaction_time->format('d M Y H:i') }}</p>
+                        <p class="text-sm text-gray-500 mb-1">Alamat</p>
+                        <p class="font-semibold">{{ $booking->alamat }}</p>
+                    </div>
+
+                    @if($booking->foto_ktp)
+                    <div>
+                        <p class="text-sm text-gray-500 mb-2">Foto KTP</p>
+                        <img src="{{ asset('storage/' . $booking->foto_ktp) }}" 
+                             class="w-64 border rounded-lg cursor-pointer hover:scale-105 transition"
+                             onclick="window.open(this.src, '_blank')"
+                             alt="KTP">
                     </div>
                     @endif
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            @if($booking->pembayaran)
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Informasi Pembayaran</h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Status Pembayaran</span>
+                        <span class="px-3 py-1 rounded-full text-sm font-semibold {{ $booking->pembayaran->getStatusBadgeClass() }}">
+                            {{ $booking->pembayaran->getStatusLabel() }}
+                        </span>
+                    </div>
+
+                    @if($booking->pembayaran->payment_type)
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Metode Pembayaran</span>
+                        <span class="font-semibold">{{ $booking->pembayaran->getPaymentMethodLabel() }}</span>
+                    </div>
+                    @endif
+
+                    @if($booking->pembayaran->va_number)
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Virtual Account</span>
+                        <span class="font-mono font-semibold">{{ $booking->pembayaran->va_number }}</span>
+                    </div>
+                    @endif
+
                     @if($booking->pembayaran->settlement_time)
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">Waktu Settlement</p>
-                        <p class="font-semibold text-sm">{{ $booking->pembayaran->settlement_time->format('d M Y H:i') }}</p>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tanggal Pembayaran</span>
+                        <span class="font-semibold">{{ $booking->pembayaran->settlement_time->format('d M Y, H:i') }}</span>
+                    </div>
+                    @endif
+
+                    @if($booking->pembayaran->isPending())
+                    <div class="mt-4">
+                        <a href="{{ route('payment.show', $booking->pembayaran->id) }}" 
+                           class="block w-full px-4 py-3 bg-yellow-500 text-white text-center rounded-lg font-semibold hover:bg-yellow-600 transition">
+                            Lihat Detail Pembayaran
+                        </a>
                     </div>
                     @endif
                 </div>
@@ -242,56 +205,62 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="lg:col-span-1">
+        <div class="lg:col-span-1 space-y-6">
             
-            <!-- Price Summary -->
-            <div class="bg-white rounded-xl shadow-md p-6 mb-6 sticky top-24">
-                <h3 class="text-lg font-bold mb-4">Ringkasan Biaya</h3>
+            <!-- Ringkasan Harga -->
+            <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Ringkasan Pembayaran</h3>
+                
                 <div class="space-y-3">
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">Harga per hari</span>
-                        <span class="font-semibold">Rp {{ number_format($booking->kost->harga / 30, 0, ',', '.') }}</span>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Harga per hari</span>
+                        <span>Rp {{ number_format($booking->total_harga / $booking->durasi, 0, ',', '.') }}</span>
                     </div>
-                    <div class="flex justify-between text-sm">
-                        <span class="text-gray-600">Durasi</span>
-                        <span class="font-semibold">{{ $booking->durasi }} hari</span>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Durasi</span>
+                        <span>{{ $booking->durasi }} hari</span>
                     </div>
                     <div class="border-t pt-3 flex justify-between">
-                        <span class="font-bold">Total</span>
-                        <span class="font-bold text-2xl text-teal-600">
-                            Rp {{ number_format($booking->total_harga, 0, ',', '.') }}
-                        </span>
+                        <span class="font-bold text-lg">Total</span>
+                        <span class="font-bold text-2xl text-teal-600">{{ $booking->formatted_total_harga }}</span>
                     </div>
                 </div>
 
-                @if($booking->status == 'pending' && !$booking->isPaid())
-                    <a href="{{ route('booking.payment', $booking->id) }}" 
-                       class="block w-full mt-4 py-3 bg-teal-600 text-white text-center rounded-lg font-semibold hover:bg-teal-700">
-                        💳 Lanjutkan Pembayaran
+                @if($booking->pembayaran && $booking->pembayaran->isPending())
+                <div class="mt-6">
+                    <a href="{{ route('payment.show', $booking->pembayaran->id) }}" 
+                       class="block w-full px-4 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white text-center rounded-lg font-semibold hover:from-teal-600 hover:to-teal-700 transition">
+                        💳 Bayar Sekarang
                     </a>
+                </div>
                 @endif
             </div>
 
-            <!-- Contact Owner -->
+            <!-- Kontak Pemilik -->
             <div class="bg-white rounded-xl shadow-md p-6">
-                <h3 class="text-lg font-bold mb-4">Hubungi Pemilik</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Kontak Pemilik</h3>
+                
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-teal-500 text-white flex items-center justify-center rounded-full text-xl font-bold">
                         {{ strtoupper(substr($booking->kost->pemilik->user->name ?? 'P', 0, 1)) }}
                     </div>
                     <div>
-                        <p class="font-semibold">{{ $booking->kost->pemilik->user->name ?? 'Pemilik' }}</p>
+                        <p class="font-semibold">{{ $booking->kost->pemilik->user->name ?? 'Pemilik Kost' }}</p>
                         <p class="text-sm text-gray-500">{{ $booking->kost->pemilik->user->email ?? '' }}</p>
                     </div>
                 </div>
-                <button class="w-full py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50">
-                    📞 Hubungi via WhatsApp
-                </button>
+
+                @if($booking->status === 'aktif')
+                <a href="https://wa.me/{{ $booking->kost->pemilik->user->phone ?? '' }}" 
+                   target="_blank"
+                   class="block w-full px-4 py-2 bg-green-500 text-white text-center rounded-lg font-semibold hover:bg-green-600 transition">
+                    💬 Chat WhatsApp
+                </a>
+                @endif
             </div>
 
         </div>
-
     </div>
-</main>
 
+</main>
 @endsection

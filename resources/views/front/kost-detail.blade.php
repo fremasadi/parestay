@@ -165,7 +165,7 @@
                 <!-- Booking Button -->
                 @auth
                     @if($kost->slot_tersedia > 0 && $kost->terverifikasi)
-                        <a href="{{ route('booking.create', $kost->id) }}" 
+                    <a href="{{ route('booking.create', $kost->id) }}" 
                            class="block w-full text-center px-4 py-2 btn-teal text-white rounded-lg font-semibold hover:bg-teal-700">
                             🏠 Booking Sekarang
                         </a>

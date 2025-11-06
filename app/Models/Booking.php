@@ -1,5 +1,4 @@
 <?php
-// app/Models/Booking.php
 
 namespace App\Models;
 
@@ -31,28 +30,81 @@ class Booking extends Model
         'total_harga' => 'decimal:2',
     ];
 
+    /**
+     * Relationship: Booking belongs to Kost
+     */
     public function kost()
     {
         return $this->belongsTo(Kost::class);
     }
 
+    /**
+     * Relationship: Booking belongs to User (Penyewa)
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Relationship: Booking has one Pembayaran
+     */
     public function pembayaran()
     {
         return $this->hasOne(Pembayaran::class);
     }
 
-    public function hasPembayaran()
+    /**
+     * Get status badge class
+     */
+    public function getStatusBadgeClass()
     {
-        return $this->pembayaran()->exists();
+        $classes = [
+            'pending' => 'bg-yellow-100 text-yellow-800',
+            'aktif' => 'bg-green-100 text-green-800',
+            'selesai' => 'bg-blue-100 text-blue-800',
+            'dibatalkan' => 'bg-red-100 text-red-800',
+        ];
+
+        return $classes[$this->status] ?? 'bg-gray-100 text-gray-800';
     }
 
-    public function isPaid()
+    /**
+     * Get status label
+     */
+    public function getStatusLabel()
     {
-        return $this->hasPembayaran() && $this->pembayaran->isSuccess();
+        $labels = [
+            'pending' => 'Menunggu Pembayaran',
+            'aktif' => 'Aktif',
+            'selesai' => 'Selesai',
+            'dibatalkan' => 'Dibatalkan',
+        ];
+
+        return $labels[$this->status] ?? 'Status Tidak Diketahui';
+    }
+
+    /**
+     * Check if booking is active
+     */
+    public function isActive()
+    {
+        return $this->status === 'aktif';
+    }
+
+    /**
+     * Check if booking can be cancelled
+     */
+    public function canBeCancelled()
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Format total harga
+     */
+    public function getFormattedTotalHargaAttribute()
+    {
+        return 'Rp ' . number_format($this->total_harga, 0, ',', '.');
     }
 }

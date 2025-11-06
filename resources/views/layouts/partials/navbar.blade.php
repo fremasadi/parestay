@@ -42,6 +42,10 @@
                                 <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600">
                                     Profil
                                 </a>
+                                <a href="{{ route('history.index') }}" 
+                                    class="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition">
+                                        Riwayat Booking
+                                </a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <button type="submit"

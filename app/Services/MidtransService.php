@@ -1,5 +1,4 @@
 <?php
-// app/Services/MidtransService.php
 
 namespace App\Services;
 
@@ -17,48 +16,105 @@ class MidtransService
         Config::$is3ds = config('midtrans.is_3ds');
     }
 
-    public function createTransaction($booking)
+    /**
+     * Create Snap Token
+     */
+    public function createTransaction($orderId, $grossAmount, $customerDetails, $itemDetails)
     {
         $params = [
             'transaction_details' => [
-                'order_id' => $this->generateOrderId($booking->id),
-                'gross_amount' => (int) $booking->total_harga,
+                'order_id' => $orderId,
+                'gross_amount' => $grossAmount,
             ],
-            'customer_details' => [
-                'first_name' => $booking->user->name,
-                'email' => $booking->user->email,
-                'phone' => $booking->no_hp,
-            ],
-            'item_details' => [
-                [
-                    'id' => $booking->kost_id,
-                    'price' => (int) $booking->total_harga,
-                    'quantity' => 1,
-                    'name' => 'Sewa ' . $booking->kost->nama . ' - ' . $booking->durasi . ' hari',
-                ]
-            ],
+            'customer_details' => $customerDetails,
+            'item_details' => $itemDetails,
             'enabled_payments' => [
-                'gopay', 'shopeepay', 'qris', 
-                'bca_va', 'bni_va', 'bri_va', 'permata_va', 'other_va',
-                'echannel', // Mandiri Bill
+                'credit_card',
+                'bca_va',
+                'bni_va',
+                'bri_va',
+                'permata_va',
+                'other_va',
+                'gopay',
+                'shopeepay',
+                'qris',
+            ],
+            'callbacks' => [
+                'finish' => route('payment.finish'),
             ],
         ];
 
-        $snapToken = Snap::getSnapToken($params);
-        
-        return [
-            'snap_token' => $snapToken,
-            'order_id' => $params['transaction_details']['order_id'],
-        ];
+        try {
+            $snapToken = Snap::getSnapToken($params);
+            $paymentUrl = Snap::createTransaction($params)->redirect_url;
+            
+            return [
+                'success' => true,
+                'snap_token' => $snapToken,
+                'payment_url' => $paymentUrl,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
+    /**
+     * Get Transaction Status
+     */
     public function getTransactionStatus($orderId)
     {
-        return Transaction::status($orderId);
+        try {
+            $status = Transaction::status($orderId);
+            return [
+                'success' => true,
+                'data' => $status,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
-    private function generateOrderId($bookingId)
+    /**
+     * Cancel Transaction
+     */
+    public function cancelTransaction($orderId)
     {
-        return 'BOOKING-' . $bookingId . '-' . time();
+        try {
+            $status = Transaction::cancel($orderId);
+            return [
+                'success' => true,
+                'data' => $status,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Expire Transaction
+     */
+    public function expireTransaction($orderId)
+    {
+        try {
+            $status = Transaction::expire($orderId);
+            return [
+                'success' => true,
+                'data' => $status,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 }

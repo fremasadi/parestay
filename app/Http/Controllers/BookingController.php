@@ -1,144 +1,188 @@
 <?php
-// app/Http/Controllers/BookingController.php
 
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Models\Kost;
-use App\Services\MidtransService;
+use App\Models\Penyewa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 class BookingController extends Controller
 {
-    protected $midtrans;
-
-    public function __construct(MidtransService $midtrans)
+    /**
+     * Show booking form
+     */
+    public function create($kostId)
     {
-        $this->midtrans = $midtrans;
+        $kost = Kost::with('pemilik.user')->findOrFail($kostId);
+        
+        // Validasi slot tersedia
+        if ($kost->slot_tersedia <= 0) {
+            return redirect()->back()->with('error', 'Maaf, kamar sudah penuh');
+        }
+
+        // Validasi terverifikasi
+        if (!$kost->terverifikasi) {
+            return redirect()->back()->with('error', 'Kost belum terverifikasi');
+        }
+
+        $penyewa = null;
+        if (auth()->check()) {
+            $penyewa = Penyewa::where('user_id', auth()->id())->first();
+        }
+        
+        return view('front.booking.create', compact('kost', 'penyewa'));
     }
 
-    public function create(Kost $kost)
+    /**
+     * Store booking
+     */
+    public function store(Request $request, $kostId)
     {
+        $validated = $request->validate([
+            'no_ktp' => 'required|string|size:16',
+            'foto_ktp' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'no_hp' => 'required|string|min:10|max:15',
+            'alamat' => 'required|string|max:500',
+            'pekerjaan' => 'nullable|string|max:100',
+            'tanggal_mulai' => 'required|date|after_or_equal:today',
+            'durasi' => 'required|integer|min:1|max:365',
+        ], [
+            'no_ktp.required' => 'Nomor KTP wajib diisi',
+            'no_ktp.size' => 'Nomor KTP harus 16 digit',
+            'foto_ktp.required' => 'Foto KTP wajib diunggah',
+            'foto_ktp.image' => 'File harus berupa gambar',
+            'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal hari ini',
+            'durasi.required' => 'Durasi sewa wajib diisi',
+        ]);
+
+
+        $kost = Kost::findOrFail($kostId);
+
+        // Validasi ulang
         if ($kost->slot_tersedia <= 0) {
-            return redirect()->back()->with('error', 'Maaf, kamar sudah penuh.');
+            return back()->with('error', 'Maaf, kamar sudah penuh')->withInput();
         }
 
         if (!$kost->terverifikasi) {
-            return redirect()->back()->with('error', 'Kost belum terverifikasi.');
+            return back()->with('error', 'Kost belum terverifikasi')->withInput();
         }
-
-        return view('front.booking.create', compact('kost'));
-    }
-
-    public function store(Request $request, Kost $kost)
-    {
-        $validated = $request->validate([
-            'no_ktp' => 'required|string|max:20',
-            'foto_ktp' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'no_hp' => 'required|string|max:15',
-            'alamat' => 'required|string',
-            'pekerjaan' => 'nullable|string',
-            'tanggal_mulai' => 'required|date|after_or_equal:today',
-            'durasi' => 'required|integer|min:1',
-        ]);
 
         try {
             DB::beginTransaction();
 
             // Upload foto KTP
-            $fotoKtpPath = $request->file('foto_ktp')->store('ktp', 'public');
+            $fotoKtpPath = null;
+            if ($request->hasFile('foto_ktp')) {
+                $fotoKtpPath = $request->file('foto_ktp')->store('ktp', 'public');
+            }
 
-            // Hitung total harga
-            $tanggalMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
+            // Hitung tanggal selesai dan total harga
+           $tanggalMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
             $tanggalSelesai = $tanggalMulai->copy()->addDays((int) $validated['durasi']);
-            $totalHarga = ($kost->harga / 30) * $validated['durasi']; // harga per hari
+
+            
+            // Hitung total harga berdasarkan durasi
+            $hargaPerHari = $kost->harga / 30; // Asumsi 1 bulan = 30 hari
+            $totalHarga = $hargaPerHari * $request->durasi;
 
             // Buat booking
             $booking = Booking::create([
                 'kost_id' => $kost->id,
-                'user_id' => auth()->id(),
-                'no_ktp' => $validated['no_ktp'],
+                'user_id' => Auth::id(),
+                'no_ktp' => $request->no_ktp,
                 'foto_ktp' => $fotoKtpPath,
-                'no_hp' => $validated['no_hp'],
-                'alamat' => $validated['alamat'],
-                'pekerjaan' => $validated['pekerjaan'],
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'pekerjaan' => $request->pekerjaan,
                 'tanggal_mulai' => $tanggalMulai,
                 'tanggal_selesai' => $tanggalSelesai,
-                'durasi' => $validated['durasi'],
+                'durasi' => $request->durasi,
                 'total_harga' => $totalHarga,
-                'status' => 'pending',
+                'status' => 'pending', // Akan berubah jadi 'aktif' setelah pembayaran
             ]);
-
-            // Update slot kost
-            $kost->decrement('slot_tersedia');
 
             DB::commit();
 
-            return redirect()->route('booking.payment', $booking->id)
-                ->with('success', 'Booking berhasil dibuat. Silakan lakukan pembayaran.');
+            // Redirect ke halaman pembayaran
+            return redirect()->route('payment.create', $booking->id)
+                ->with('success', 'Booking berhasil dibuat. Silakan lanjutkan pembayaran.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
+            
+            // Hapus foto KTP jika ada error
+            if (isset($fotoKtpPath) && $fotoKtpPath) {
+                Storage::disk('public')->delete($fotoKtpPath);
+            }
+
+            Log::error('Error creating booking: ' . $e->getMessage());
+            
+            return back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
                 ->withInput();
         }
     }
 
-    public function payment(Booking $booking)
+    /**
+     * Show user's bookings
+     */
+    public function index()
     {
-        // Pastikan user adalah pemilik booking
-        if ($booking->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $bookings = Booking::with(['kost', 'pembayaran'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        // Jika sudah ada pembayaran yang berhasil
-        if ($booking->isPaid()) {
-            return redirect()->route('booking.show', $booking->id)
-                ->with('info', 'Booking ini sudah dibayar.');
-        }
-
-        // Buat atau ambil pembayaran
-        $pembayaran = $booking->pembayaran;
-        
-        if (!$pembayaran) {
-            try {
-                $transaction = $this->midtrans->createTransaction($booking);
-                
-                $pembayaran = $booking->pembayaran()->create([
-                    'order_id' => $transaction['order_id'],
-                    'gross_amount' => $booking->total_harga,
-                    'transaction_status' => 'pending',
-                ]);
-
-                $pembayaran->update([
-                    'midtrans_response' => ['snap_token' => $transaction['snap_token']]
-                ]);
-
-            } catch (\Exception $e) {
-                return redirect()->back()
-                    ->with('error', 'Gagal membuat pembayaran: ' . $e->getMessage());
-            }
-        }
-
-        $snapToken = $pembayaran->midtrans_response['snap_token'] ?? null;
-
-        return view('front.booking.payment', compact('booking', 'pembayaran', 'snapToken'));
+        return view('front.booking.index', compact('bookings'));
     }
 
-    public function show(Booking $booking)
+    /**
+     * Show booking detail
+     */
+    public function show($id)
     {
-        if ($booking->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $booking = Booking::with(['kost.pemilik.user', 'pembayaran'])
+            ->where('user_id', Auth::id())
+            ->findOrFail($id);
 
         return view('front.booking.show', compact('booking'));
     }
 
-    public function index()
+    /**
+     * Cancel booking
+     */
+    public function cancel($id)
     {
-        $bookings = auth()->user()->bookings()->with('kost', 'pembayaran')->latest()->get();
-        return view('front.booking.index', compact('bookings'));
+        try {
+            $booking = Booking::where('user_id', Auth::id())->findOrFail($id);
+
+            // Hanya bisa cancel jika status pending
+            if ($booking->status !== 'pending') {
+                return back()->with('error', 'Booking tidak dapat dibatalkan');
+            }
+
+            DB::beginTransaction();
+
+            // Update status
+            $booking->update(['status' => 'dibatalkan']);
+
+            // Jika ada pembayaran, cancel juga
+            if ($booking->pembayaran) {
+                $booking->pembayaran->update(['transaction_status' => 'cancel']);
+            }
+
+            DB::commit();
+
+            return redirect()->route('booking.index')
+                ->with('success', 'Booking berhasil dibatalkan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal membatalkan booking');
+        }
     }
 }
