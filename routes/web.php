@@ -8,6 +8,8 @@ use App\Http\Controllers\Pemilik\KostController as PemilikKostController;
 use App\Http\Controllers\Front\LandingController;
 use App\Http\Controllers\Front\FrontController;
 use App\Http\Controllers\Admin\PenyewaController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
 
 Route::get('/', [FrontController::class, 'landing'])->name('landing');
 Route::get('/detail/{id}', [FrontController::class, 'show'])->name('detail');
@@ -46,6 +48,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/kost/{kost}/booking', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('/kost/{kost}/booking', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('/booking/{booking}/payment', [BookingController::class, 'payment'])->name('booking.payment');
+    Route::get('/booking/{booking}', [BookingController::class, 'show'])->name('booking.show');
+    Route::get('/bookings', [BookingController::class, 'index'])->name('booking.index');
+
 });
+
+// Payment routes
+Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
+Route::get('/payment/unfinish', [PaymentController::class, 'unfinish'])->name('payment.unfinish');
+Route::get('/payment/error', [PaymentController::class, 'error'])->name('payment.error');
+Route::get('/payment/status/{orderId}', [PaymentController::class, 'checkStatus'])->name('payment.status');
 
 require __DIR__.'/auth.php';

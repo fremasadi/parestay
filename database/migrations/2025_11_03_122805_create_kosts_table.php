@@ -21,14 +21,12 @@ return new class extends Migration
 
             // Data utama kost
             $table->string('nama');
-            // $table->text('deskripsi')->nullable();
             $table->decimal('harga_per_bulan', 12, 2)->default(0);
             $table->string('alamat');
             $table->float('latitude', 10, 6)->nullable();
             $table->float('longitude', 10, 6)->nullable();
             $table->enum('jenis_kost', ['putra', 'putri', 'bebas'])->default('bebas');
 
-            // JSON fasilitas (misalnya ["WiFi", "AC", "Kamar Mandi Dalam"])
             $table->json('fasilitas')->nullable();
             $table->json('peraturan')->nullable();
 

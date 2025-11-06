@@ -194,6 +194,18 @@
             return harga.toString();
         }
     }
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        const targetId = this.getAttribute('href').substring(1);
+        const targetEl = document.getElementById(targetId);
+        if (!targetEl) return;
+
+        e.preventDefault();
+        const offset = targetEl.getBoundingClientRect().top + window.scrollY - 100; // offset navbar
+        window.scrollTo({ top: offset, behavior: 'smooth' });
+    });
+});
+
 
     // 🏠 Ambil & tampilkan kost di peta
     function loadKostsToMap() {
