@@ -15,9 +15,10 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
-        if (Auth::user()->role !== $role) {
+        if (strtolower(Auth::user()->role) !== strtolower($role)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }
+
 
         return $next($request);
     }
