@@ -27,6 +27,13 @@
                     <div>Pemilik Kost</div>
                 </a>
             </li>
+            {{-- Kursus --}}
+            <li class="menu-item {{ request()->routeIs('admin.kursus.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.kursus.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-book"></i>
+                    <div>Kursus</div>
+                </a>
+            </li>
 
             <li class="menu-item {{ request()->routeIs('admin.penyewa.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.penyewa.index') }}" class="menu-link">
@@ -41,19 +48,6 @@
                     <div>Semua Pengguna</div>
                 </a>
             </li>
-
-            <!-- {{-- Menu Header - Manajemen Properti --}}
-            <li class="menu-header small text-uppercase">
-                <span class="menu-header-text">Manajemen Properti</span>
-            </li>
-
-            <li class="menu-item ">
-                <a href="" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-receipt"></i>
-                    <div></div>
-                </a>
-            </li> -->
-
 
 
             {{-- Menu Header - Transaksi (Coming Soon) --}}

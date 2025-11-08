@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
 use App\Http\Controllers\Pemilik\BookingController as PemilikBookingController;
 use App\Http\Controllers\Pemilik\PembayaranController as PemilikPembayaranController;
+use App\Http\Controllers\Admin\KursusController;
 
 Route::get('/', [FrontController::class, 'landing'])->name('landing');
 Route::get('/detail/{id}', [FrontController::class, 'show'])->name('detail');
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('booking', AdminBookingController::class);
         Route::get('pembayaran', [AdminPembayaranController::class, 'index'])->name('pembayaran.index');
 
+    Route::resource('kursus', KursusController::class);
 
 
 });

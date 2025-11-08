@@ -55,7 +55,7 @@
                                 <td>{{ $booking->durasi }} bulan</td>
                                 <td>{{ $booking->formatted_total_harga }}</td>
                                 <td>
-                                                                            {{ $booking->getStatusLabel() }}
+                                    {{ $booking->getStatusLabel() }}
 
                                 </td>
                             </tr>

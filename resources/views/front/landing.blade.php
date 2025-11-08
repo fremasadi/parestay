@@ -57,6 +57,20 @@
     <div class="container mx-auto px-6">
         <div class="bg-white rounded-2xl shadow-xl p-8">
             <form id="searchForm" method="GET" action="{{ route('kost.search') }}" class="flex flex-col md:flex-row gap-4">
+                {{-- Pilih Kursus --}}
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Kursus</label>
+                    <select name="kursus_id" id="kursus_id"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                        <option value="">Semua Kursus</option>
+                        @foreach(App\Models\Kursus::all() as $kursus)
+                            <option value="{{ $kursus->id }}" {{ request('kursus_id') == $kursus->id ? 'selected' : '' }}>
+                                {{ $kursus->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
                 
                 {{-- Jenis Kost --}}
                 <div class="flex-1">

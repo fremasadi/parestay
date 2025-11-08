@@ -22,10 +22,22 @@
     
     <div class="p-6">
         <h3 class="text-xl font-bold text-gray-800 mb-2">{{ $kost->nama }}</h3>
-        <p class="text-gray-600 text-sm mb-4">
-            <i class="fas fa-map-marker-alt teal-accent mr-1"></i>
-            {{ Str::limit($kost->alamat, 50) }}
-        </p>
+       <p class="text-gray-600 text-sm mb-1">
+    <i class="fas fa-map-marker-alt teal-accent mr-1"></i>
+    {{ Str::limit($kost->alamat, 50) }}
+</p>
+
+@if(!empty($kost->jarak_km))
+<p class="text-teal-500 text-sm font-semibold mb-4">
+    <i class="fas fa-road mr-1"></i>
+    {{ $kost->jarak_km }} km dari kursus
+</p>
+@else
+<p class="mb-4"></p> {{-- untuk memberi jarak visual konsisten --}}
+@endif
+
+
+        
         
         {{-- FASILITAS --}}
         <div class="flex flex-wrap gap-2 mb-4">
