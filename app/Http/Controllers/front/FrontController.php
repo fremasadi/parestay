@@ -11,57 +11,76 @@ class FrontController extends Controller
 {
     public function landing(Request $request)
     {
-        $query = Kost::with(['reviews', 'pemilik'])
-                    ->where('status', 'tersedia');
+        $query = Kost::with([
+            'reviews',
+            'pemilik',
+            'kamars' => function ($q) {
+                $q->where('status', 'tersedia');
+            },
+        ])
+            ->withMin(
+                [
+                    'kamars as kamars_min_harga' => function ($q) {
+                        $q->where('status', 'tersedia');
+                    },
+                ],
+                'harga',
+            )
+            ->whereHas('kamars', function ($q) {
+                $q->where('status', 'tersedia');
+            });
 
-        // Filter jenis kost
+        // ✅ Filter jenis kost
         if ($request->filled('jenis_kost') && $request->jenis_kost !== 'semua') {
             $query->where('jenis_kost', $request->jenis_kost);
         }
 
-        // Filter tipe harga
+        // ✅ Filter type harga (dari kamars)
         if ($request->filled('type_harga') && $request->type_harga !== 'semua') {
-            $query->where('type_harga', $request->type_harga);
+            $query->whereHas('kamars', function ($q) use ($request) {
+                $q->where('type_harga', $request->type_harga);
+            });
         }
 
-        // Filter harga maksimal
+        // ✅ Filter harga maksimal (dari kamars)
         if ($request->filled('harga_max')) {
-            $query->where('harga', '<=', $request->harga_max);
+            $query->whereHas('kamars', function ($q) use ($request) {
+                $q->where('harga', '<=', $request->harga_max);
+            });
         }
 
-        // Filter / urut berdasarkan kursus
+        // ✅ Filter / sort berdasarkan kursus (jarak)
         if ($request->filled('kursus_id')) {
             $kursus = Kursus::find($request->kursus_id);
+
             if ($kursus) {
                 $lat = $kursus->latitude;
                 $lng = $kursus->longitude;
 
-                // ✅ PERBAIKAN: Pastikan select semua kolom + jarak
-                $query->selectRaw('kosts.*, 
-                    (6371 * acos(
-                        cos(radians(?)) * 
-                        cos(radians(latitude)) * 
-                        cos(radians(longitude) - radians(?)) + 
-                        sin(radians(?)) * 
-                        sin(radians(latitude))
-                    )) AS jarak', 
-                    [$lat, $lng, $lat])
-                      ->orderBy('jarak', 'asc');
+                $query
+                    ->selectRaw(
+                        'kosts.*,
+                (6371 * acos(
+                    cos(radians(?)) *
+                    cos(radians(latitude)) *
+                    cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) *
+                    sin(radians(latitude))
+                )) AS jarak',
+                        [$lat, $lng, $lat],
+                    )
+                    ->orderBy('jarak', 'asc');
             }
         } else {
-            $query->orderBy('created_at', 'desc');
+            $query->orderBy('kamars_min_harga', 'asc');
         }
 
-        $kosts = $query->get();
-
-        // ✅ PENTING: Tambahkan jarak_km ke setiap kost untuk view
-        $kosts = $kosts->map(function($kost) {
-            // Ambil jarak dari query (jika ada)
+        $kosts = $query->get()->map(function ($kost) {
             $kost->jarak_km = isset($kost->jarak) ? round($kost->jarak, 2) : null;
+
             return $kost;
         });
 
-        // Untuk AJAX
         if ($request->ajax()) {
             return response()->json([
                 'html' => view('layouts.partials.kost-cards', compact('kosts'))->render(),
@@ -71,19 +90,18 @@ class FrontController extends Controller
         return view('front.landing', compact('kosts'));
     }
 
-    public function search(Request $request) 
-    { 
-        return $this->landing($request); 
+    public function search(Request $request)
+    {
+        return $this->landing($request);
     }
 
     public function getKostsJson(Request $request)
     {
-        $query = Kost::with(['reviews', 'pemilik'])
-                    ->where('status', 'tersedia');
+        $query = Kost::with(['reviews', 'pemilik'])->where('tersedia');
 
         // ✅ PERBAIKAN: Gunakan variabel untuk tracking apakah ada filter kursus
         $hasKursusFilter = false;
-        
+
         if ($request->filled('kursus_id')) {
             $kursus = Kursus::find($request->kursus_id);
             if ($kursus) {
@@ -91,16 +109,19 @@ class FrontController extends Controller
                 $lat = $kursus->latitude;
                 $lng = $kursus->longitude;
 
-                $query->selectRaw('kosts.*, 
+                $query
+                    ->selectRaw(
+                        'kosts.*,
                     (6371 * acos(
-                        cos(radians(?)) * 
-                        cos(radians(latitude)) * 
-                        cos(radians(longitude) - radians(?)) + 
-                        sin(radians(?)) * 
+                        cos(radians(?)) *
+                        cos(radians(latitude)) *
+                        cos(radians(longitude) - radians(?)) +
+                        sin(radians(?)) *
                         sin(radians(latitude))
-                    )) AS jarak', 
-                    [$lat, $lng, $lat])
-                      ->orderBy('jarak', 'asc');
+                    )) AS jarak',
+                        [$lat, $lng, $lat],
+                    )
+                    ->orderBy('jarak', 'asc');
             }
         }
 
@@ -110,11 +131,21 @@ class FrontController extends Controller
         }
 
         if ($request->filled('type_harga') && $request->type_harga !== 'semua') {
-            $query->where('type_harga', $request->type_harga);
+            $query->whereHas('kamars', function ($q) use ($request) {
+                $q->where('type_harga', $request->type_harga);
+            });
         }
 
         if ($request->filled('harga_max')) {
-            $query->where('harga', '<=', $request->harga_max);
+            $hargaMax = (int) preg_replace('/[^0-9]/', '', $request->harga_max);
+
+            $query->whereHas('kamars', function ($q) use ($hargaMax) {
+                $q->where('harga', '<=', $hargaMax);
+            });
+        }
+
+        if ($request->filled('sort') && $request->sort === 'harga_termurah') {
+            $query->orderBy('kamars_min_harga', 'asc');
         }
 
         $kosts = $query->get()->map(function ($kost) {
@@ -124,14 +155,11 @@ class FrontController extends Controller
                 'alamat' => $kost->alamat,
                 'latitude' => (float) $kost->latitude,
                 'longitude' => (float) $kost->longitude,
-                'harga' => (int) $kost->harga,
                 'type_harga' => $kost->type_harga ?? 'bulanan',
                 'jenis_kost' => $kost->jenis_kost,
                 'terverifikasi' => (bool) $kost->terverifikasi,
                 'avg_rating' => round($kost->reviews()->avg('rating') ?? 0, 1),
                 'review_count' => $kost->reviews()->count(),
-                'slot_tersedia' => $kost->slot_tersedia ?? 0,
-                'total_slot' => $kost->total_slot ?? 0,
                 // ✅ PERBAIKAN: Akses property 'jarak' yang benar
                 'jarak_km' => isset($kost->jarak) ? round($kost->jarak, 2) : null,
             ];

@@ -30,15 +30,10 @@ class KostController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:100',
-            'harga' => 'required|numeric|min:0',
             'type_harga' => 'required|in:harian,mingguan,bulanan',
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
-            'fasilitas' => 'nullable|string',
             'peraturan' => 'nullable|string',
-            'total_slot' => 'required|integer|min:1',
-            'slot_tersedia' => 'required|integer|min:0',
-            'status' => 'required|in:tersedia,penuh,menunggu',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
@@ -50,7 +45,6 @@ class KostController extends Controller
         ]);
 
         $data['owner_id'] = $pemilikId;
-        $data['fasilitas'] = $request->fasilitas ?: '[]';
         $data['peraturan'] = $request->peraturan ?: '[]';
         $data['terverifikasi'] = false;
 
@@ -72,26 +66,19 @@ class KostController extends Controller
 
         $request->validate([
             'nama' => 'required|string|max:100',
-            'harga' => 'required|numeric|min:0',
             'type_harga' => 'required|in:harian,mingguan,bulanan',
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
-            'fasilitas' => 'nullable|string',
             'peraturan' => 'nullable|string',
-            'total_slot' => 'required|integer|min:1',
-            'slot_tersedia' => 'required|integer|min:0',
-            'status' => 'required|in:tersedia,penuh,menunggu',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
 
         $data = $request->only([
-            'nama', 'harga', 'type_harga', 'alamat',
+            'nama', 'type_harga', 'alamat',
             'latitude', 'longitude', 'jenis_kost',
-            'total_slot', 'slot_tersedia', 'status'
         ]);
 
-        $data['fasilitas'] = $request->fasilitas ?: '[]';
         $data['peraturan'] = $request->peraturan ?: '[]';
 
         $kost->update($data);

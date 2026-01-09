@@ -20,8 +20,8 @@ class BookingController extends Controller
 
         $pemilikId = $user->pemilik->id;
 
-        $bookings = Booking::with(['kost', 'user'])
-            ->where('status', 'aktif') // ✅ hanya tampilkan booking aktif
+        $bookings = Booking::with(['kost', 'kamar', 'user'])
+            ->where('status', 'aktif')
             ->whereHas('kost', function ($query) use ($pemilikId) {
                 $query->where('owner_id', $pemilikId);
             })

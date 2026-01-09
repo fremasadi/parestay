@@ -21,9 +21,7 @@
                         <tr>
                             <th>Nama Kost</th>
                             <th>Pemilik</th>
-                            <th>Harga</th>
                             <th>Type Harga</th>
-                            <th>Status</th>
                             <th>Verifikasi</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -33,16 +31,7 @@
                             <tr>
                                 <td>{{ $kost->nama }}</td>
                                 <td>{{ $kost->pemilik->user->name ?? '-' }}</td>
-                                <td>Rp{{ number_format($kost->harga, 0, ',', '.') }}</td>
                                 <td>{{ $kost->type_harga ?? '-' }}</td>
-                                <td>
-                                    <span class="badge
-                                        @if($kost->status === 'tersedia') bg-label-success
-                                        @elseif($kost->status === 'penuh') bg-label-danger
-                                        @else bg-label-secondary @endif">
-                                        {{ ucfirst($kost->status) }}
-                                    </span>
-                                </td>
                                 <td>
                                     <span class="badge {{ $kost->terverifikasi ? 'bg-label-success' : 'bg-label-warning' }}">
                                         {{ $kost->terverifikasi ? 'Terverifikasi' : 'Belum' }}

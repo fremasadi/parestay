@@ -4,14 +4,8 @@
         <input type="text" name="nama" value="{{ old('nama', $kost->nama ?? '') }}" class="form-control" required>
     </div>
 
-    {{-- Harga & Tipe Harga --}}
+    {{-- Harga --}}
     <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="harga" class="form-label fw-semibold">Harga</label>
-            <input type="number" name="harga" id="harga"
-                value="{{ old('harga', $kost->harga ?? '') }}"
-                class="form-control" placeholder="Masukkan harga" required>
-        </div>
 
         <div class="col-md-6">
             <label for="type_harga" class="form-label fw-semibold">Tipe Harga</label>
@@ -41,11 +35,6 @@
         'mapId' => 'pemilik-kost-form'
     ])
 
-    {{-- Fasilitas --}}
-    @include('components.fasilitas-picker', [
-        'fasilitas' => $kost->fasilitas ?? []
-    ])
-
     {{-- Peraturan --}}
     @include('components.peraturan-picker', [
         'peraturan' => $kost->peraturan ?? []
@@ -63,25 +52,5 @@
             </select>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label">Total Slot</label>
-            <input type="number" name="total_slot" value="{{ old('total_slot', $kost->total_slot ?? 0) }}" class="form-control" required>
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Slot Tersedia</label>
-            <input type="number" name="slot_tersedia" value="{{ old('slot_tersedia', $kost->slot_tersedia ?? 0) }}" class="form-control" required>
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Status</label>
-            <select name="status" class="form-select">
-                @foreach(['tersedia','penuh','menunggu'] as $s)
-                    <option value="{{ $s }}" {{ old('status', $kost->status ?? '') == $s ? 'selected' : '' }}>
-                        {{ ucfirst($s) }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
     </div>
 </div>

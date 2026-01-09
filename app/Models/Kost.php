@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Casts\JsonArray;
+use App\Models\User;
+use App\Casts\JsonStringArray;
 
 class Kost extends Model
 {
@@ -12,27 +14,11 @@ class Kost extends Model
 
     protected $table = 'kosts';
 
-    protected $fillable = [
-        'owner_id',
-        'nama',
-        'harga',
-        'type_harga',
-        'alamat',
-        'latitude',
-        'longitude',
-        'jenis_kost',
-        'fasilitas',
-        'peraturan',
-        'images',
-        'total_slot',
-        'slot_tersedia',
-        'status',
-        'terverifikasi',
-    ];
+    protected $fillable = ['owner_id', 'nama', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost', 'peraturan', 'images', 'terverifikasi'];
 
-     protected $casts = [
-        'fasilitas' => 'json',      
-        'peraturan' => 'json',      
+    protected $casts = [
+        'fasilitas' => JsonStringArray::class,
+        'peraturan' => JsonStringArray::class,
         'images' => JsonArray::class,
         'terverifikasi' => 'boolean',
         'harga' => 'decimal:0',
@@ -66,19 +52,15 @@ class Kost extends Model
         return $value ?? [];
     }
 
-    // 🔧 FIX: Accessor untuk images
-    public function getImagesAttribute($value)
-    {
-        if (is_string($value)) {
-            return json_decode($value, true) ?? [];
-        }
-        return $value ?? [];
-    }
-
     /** 🔗 Relasi: Kost dimiliki oleh Pemilik */
     public function pemilik()
     {
         return $this->belongsTo(Pemilik::class, 'owner_id');
+    }
+
+    public function kamars()
+    {
+        return $this->hasMany(Kamar::class);
     }
 
     /** 🔗 Kost memiliki banyak review */
@@ -92,5 +74,9 @@ class Kost extends Model
     {
         return $this->hasMany(Booking::class, 'kost_id');
     }
-    
+
+    public function kamarTermurah()
+{
+    return $this->hasOne(Kamar::class)->orderBy('harga', 'asc');
+}
 }

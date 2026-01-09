@@ -122,6 +122,13 @@
                 </a>
             </li>
 
+            <li class="menu-item {{ request()->routeIs('pemilik.kamar.*') ? 'active' : '' }}">
+                <a href="{{ route('pemilik.kamar.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-building-house"></i>
+                    <div>Daftar Kamar Kost Saya</div>
+                </a>
+            </li>
+
             {{-- Menu Header - Transaksi (Coming Soon) --}}
             <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Transaksi</span>

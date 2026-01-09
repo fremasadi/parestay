@@ -64,7 +64,7 @@
                 @enderror
             </div>
 
-            {{-- Status --}}
+            {{-- Sztatus --}}
             <div class="col-md-3">
                 <label for="status" class="form-label">Status</label>
                 <select name="status" id="status"

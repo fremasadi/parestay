@@ -24,15 +24,15 @@
         @if(!empty($kost->images) && count($kost->images) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <img src="{{ asset('storage/' . $kost->images[0]) }}" 
-                         class="w-full h-96 object-cover rounded-xl" 
+                    <img src="{{ asset('storage/' . $kost->images[0]) }}"
+                         class="w-full h-96 object-cover rounded-xl"
                          alt="{{ $kost->nama }}">
                 </div>
                 @if(count($kost->images) > 1)
                     <div class="grid grid-cols-2 gap-4">
                         @foreach(array_slice($kost->images, 1, 4) as $image)
-                            <img src="{{ asset('storage/' . $image) }}" 
-                                 class="w-full h-44 object-cover rounded-xl" 
+                            <img src="{{ asset('storage/' . $image) }}"
+                                 class="w-full h-44 object-cover rounded-xl"
                                  alt="{{ $kost->nama }}">
                         @endforeach
                     </div>
@@ -68,12 +68,14 @@
                     <span class="text-gray-600">{{ number_format($avgRating, 1) }} ({{ $reviewCount }} review)</span>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 flex-wrap">
                     <span class="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold">
                         {{ ucfirst($kost->jenis_kost) }}
                     </span>
-                    <span class="text-gray-600">{{ $kost->slot_tersedia }}/{{ $kost->total_slot }} kamar tersedia</span>
-                    
+                    <span class="text-gray-600">
+                        {{ $kost->kamars()->where('status', 'tersedia')->count() }} kamar tersedia
+                    </span>
+
                     @if($kost->terverifikasi)
                         <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
                             ✓ Terverifikasi
@@ -82,32 +84,100 @@
                 </div>
             </div>
 
-            <!-- 💰 Harga -->
+            <!-- 🏠 PILIH JENIS KAMAR -->
             <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-3">Harga</h2>
-                <div class="text-3xl font-bold text-teal-600">
-                    Rp {{ number_format($kost->harga, 0, ',', '.') }}
-                    <span class="text-base text-gray-500">/{{ $kost->type_harga ?? 'bulan' }}</span>
-                </div>
-            </div>
+                <h2 class="text-xl font-bold mb-4">Pilih Jenis Kamar</h2>
 
-            <!-- 🧰 Fasilitas -->
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-3">Fasilitas</h2>
-                @if(!empty($kost->fasilitas))
-                    <ul class="grid grid-cols-2 gap-2 text-gray-700">
-                        @foreach($kost->fasilitas as $item)
-                            <li>• {{ $item }}</li>
+                @if($kost->kamars()->where('status', 'tersedia')->count() > 0)
+                    <div class="space-y-4">
+                        @foreach($kost->kamars()->where('status', 'tersedia')->get() as $kamar)
+                            <div class="border border-gray-200 rounded-lg p-4 hover:border-teal-500 transition-colors cursor-pointer group"
+                                 onclick="selectRoom({{ $kamar->id }})">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-3 mb-2">
+                                            <h3 class="text-lg font-semibold">Kamar {{ $kamar->nomor_kamar }}</h3>
+                                            <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                                Tersedia
+                                            </span>
+                                        </div>
+
+                                        @if($kamar->luas_kamar)
+                                            <p class="text-sm text-gray-600 mb-2">
+                                                📏 Luas: {{ $kamar->luas_kamar }}
+                                            </p>
+                                        @endif
+
+                                        @if(!empty($kamar->fasilitas))
+                                            <div class="flex flex-wrap gap-2 mb-3">
+                                                @foreach(array_slice($kamar->fasilitas, 0, 4) as $fasil)
+                                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                                        {{ $fasil }}
+                                                    </span>
+                                                @endforeach
+                                                @if(count($kamar->fasilitas) > 4)
+                                                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                                        +{{ count($kamar->fasilitas) - 4 }} lainnya
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endif
+
+                                        @if(!empty($kamar->images) && count($kamar->images) > 0)
+                                            <div class="flex gap-2 mt-3">
+                                                @foreach(array_slice($kamar->images, 0, 3) as $img)
+                                                    <img src="{{ asset('storage/' . $img) }}"
+                                                         class="w-20 h-20 object-cover rounded"
+                                                         alt="Kamar {{ $kamar->nomor_kamar }}">
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="text-right ml-4">
+                                        <div class="text-2xl font-bold text-teal-600">
+                                            Rp {{ number_format($kamar->harga, 0, ',', '.') }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">/{{ $kamar->type_harga }}</div>
+
+                                        @auth
+                                            @if($kost->terverifikasi)
+                                                <button type="button"
+                                                        onclick="bookRoom({{ $kamar->id }})"
+                                                        class="mt-3 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
+                                                    Pilih Kamar
+                                                </button>
+                                            @else
+                                                <button disabled
+                                                        class="mt-3 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm cursor-not-allowed">
+                                                    Belum Terverifikasi
+                                                </button>
+                                            @endif
+                                        @else
+                                            <a href="{{ route('login') }}"
+                                               class="mt-3 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
+                                                Login untuk Booking
+                                            </a>
+                                        @endauth
+                                    </div>
+                                </div>
+                            </div>
                         @endforeach
-                    </ul>
+                    </div>
                 @else
-                    <p class="text-gray-500">Tidak ada fasilitas yang tercantum</p>
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        <p class="font-semibold">Belum ada kamar tersedia</p>
+                        <p class="text-sm">Silakan cek kembali nanti</p>
+                    </div>
                 @endif
             </div>
 
             <!-- 📜 Peraturan -->
             <div class="bg-white rounded-xl shadow-md p-6">
-                <h2 class="text-xl font-bold mb-3">Peraturan</h2>
+                <h2 class="text-xl font-bold mb-3">Peraturan Kost</h2>
                 @if(!empty($kost->peraturan))
                     <ul class="list-disc pl-5 text-gray-700 space-y-1">
                         @foreach($kost->peraturan as $rule)
@@ -148,8 +218,8 @@
         </div>
 
         <!-- Kolom kanan -->
-        <div class="lg:col-span-1 space-y-6">
-            <!-- 👤 Pemilik & Booking Card -->
+        <div class="lg:col-span-1">
+            <!-- 👤 Pemilik Info -->
             <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
                 <h3 class="text-lg font-bold mb-4">Pemilik Kost</h3>
                 <div class="flex items-center gap-3 mb-4">
@@ -162,31 +232,6 @@
                     </div>
                 </div>
 
-                <!-- Booking Button -->
-                @auth
-                    @if($kost->slot_tersedia > 0 && $kost->terverifikasi)
-                    <a href="{{ route('booking.create', $kost->id) }}" 
-                           class="block w-full text-center px-4 py-2 btn-teal text-white rounded-lg font-semibold hover:bg-teal-700">
-                            🏠 Booking Sekarang
-                        </a>
-                    @elseif($kost->slot_tersedia <= 0)
-                        <button disabled 
-                                class="block w-full text-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed">
-                            Kamar Penuh
-                        </button>
-                    @else
-                        <button disabled 
-                                class="block w-full text-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed">
-                            Belum Terverifikasi
-                        </button>
-                    @endif
-                @else
-                    <a href="{{ route('login') }}" 
-                       class="block w-full text-center px-4 py-2 btn-teal text-white rounded-lg font-semibold hover:bg-teal-700">
-                        Login untuk Booking
-                    </a>
-                @endauth
-
                 <!-- Info Alert -->
                 @if(!$kost->terverifikasi)
                     <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -195,10 +240,46 @@
                         </p>
                     </div>
                 @endif
+
+                <!-- Harga Range Info -->
+                @php
+                    $kamarTersedia = $kost->kamars()->where('status', 'tersedia')->get();
+                    $minHarga = $kamarTersedia->min('harga');
+                    $maxHarga = $kamarTersedia->max('harga');
+                @endphp
+
+                @if($kamarTersedia->count() > 0)
+                    <div class="mt-4 p-4 bg-teal-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Kisaran Harga:</p>
+                        <p class="text-xl font-bold text-teal-600">
+                            @if($minHarga == $maxHarga)
+                                Rp {{ number_format($minHarga, 0, ',', '.') }}
+                            @else
+                                Rp {{ number_format($minHarga, 0, ',', '.') }} -
+                                Rp {{ number_format($maxHarga, 0, ',', '.') }}
+                            @endif
+                        </p>
+                    </div>
+                @endif
             </div>
         </div>
 
     </div>
 </main>
+
+<script>
+function selectRoom(kamarId) {
+    // Highlight selected room
+    document.querySelectorAll('.border-gray-200').forEach(el => {
+        el.classList.remove('border-teal-500', 'bg-teal-50');
+    });
+    event.currentTarget.classList.add('border-teal-500', 'bg-teal-50');
+}
+
+function bookRoom(kamarId) {
+    // Redirect to booking page with kamar_id
+    window.location.href = `/booking/create?kamar_id=${kamarId}`;
+}
+</script>
 
 @endsection

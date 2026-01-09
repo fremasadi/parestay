@@ -3,124 +3,153 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use App\Models\Kost;
+use App\Models\Kamar;
 use App\Models\Penyewa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+
 class BookingController extends Controller
 {
     /**
      * Show booking form
      */
-    public function create($kostId)
+    public function create(Request $request)
     {
-        $kost = Kost::with('pemilik.user')->findOrFail($kostId);
-        
-        // Validasi slot tersedia
-        if ($kost->slot_tersedia <= 0) {
-            return redirect()->back()->with('error', 'Maaf, kamar sudah penuh');
+        Log::info('Booking create accessed', [
+            'user_id' => auth()->id(),
+            'query' => $request->query(),
+        ]);
+
+        $kamarId = $request->query('kamar_id');
+
+        if (!$kamarId) {
+            Log::warning('Booking create tanpa kamar_id');
+            return redirect()->back()->with('error', 'Silakan pilih kamar terlebih dahulu');
         }
 
-        // Validasi terverifikasi
-        if (!$kost->terverifikasi) {
+        $kamar = Kamar::with('kost.pemilik.user')->find($kamarId);
+
+        if (!$kamar) {
+            Log::error('Kamar tidak ditemukan', ['kamar_id' => $kamarId]);
+            abort(404);
+        }
+
+        Log::info('Kamar ditemukan', [
+            'kamar_id' => $kamar->id,
+            'status' => $kamar->status,
+            'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
+        ]);
+
+        if ($kamar->status !== 'tersedia') {
+            return redirect()->back()->with('error', 'Kamar tidak tersedia');
+        }
+
+        if (!$kamar->kost->terverifikasi) {
             return redirect()->back()->with('error', 'Kost belum terverifikasi');
         }
 
+        // ✅ Ambil penyewa SATU KALI SAJA
         $penyewa = null;
+
         if (auth()->check()) {
             $penyewa = Penyewa::where('user_id', auth()->id())->first();
         }
-        
-        return view('front.booking.create', compact('kost', 'penyewa'));
+
+        // ✅ Cek kelengkapan
+        $dataLengkap = $penyewa && $penyewa->no_ktp && $penyewa->foto_ktp && $penyewa->no_hp && $penyewa->alamat && $penyewa->pekerjaan;
+
+        return view('front.booking.create', compact('kamar', 'penyewa', 'dataLengkap'));
     }
 
     /**
      * Store booking
      */
-    public function store(Request $request, $kostId)
+    public function store(Request $request)
     {
-        $validated = $request->validate([
-            'no_ktp' => 'required|string|size:16',
-            'foto_ktp' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'no_hp' => 'required|string|min:10|max:15',
-            'alamat' => 'required|string|max:500',
-            'pekerjaan' => 'nullable|string|max:100',
-            'tanggal_mulai' => 'required|date|after_or_equal:today',
-            'durasi' => 'required|integer|min:1|max:365',
-        ], [
-            'no_ktp.required' => 'Nomor KTP wajib diisi',
-            'no_ktp.size' => 'Nomor KTP harus 16 digit',
-            'foto_ktp.required' => 'Foto KTP wajib diunggah',
-            'foto_ktp.image' => 'File harus berupa gambar',
-            'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal hari ini',
-            'durasi.required' => 'Durasi sewa wajib diisi',
-        ]);
+        $validated = $request->validate(
+            [
+                'kamar_id' => 'required|exists:kamars,id',
+                'tanggal_mulai' => 'required|date|after_or_equal:today',
+                'durasi' => 'required|integer|min:1',
+                'durasi_type' => 'required|in:harian,mingguan,bulanan',
+            ],
+            [
+                'kamar_id.required' => 'Kamar harus dipilih',
+                'tanggal_mulai.after_or_equal' => 'Tanggal mulai minimal hari ini',
+                'durasi.required' => 'Durasi sewa wajib diisi',
+            ],
+        );
 
-
-        $kost = Kost::findOrFail($kostId);
+        $kamar = Kamar::with('kost')->findOrFail($request->kamar_id);
 
         // Validasi ulang
-        if ($kost->slot_tersedia <= 0) {
-            return back()->with('error', 'Maaf, kamar sudah penuh')->withInput();
+        if ($kamar->status !== 'tersedia') {
+            return back()->with('error', 'Maaf, kamar tidak tersedia')->withInput();
         }
 
-        if (!$kost->terverifikasi) {
+        if (!$kamar->kost->terverifikasi) {
             return back()->with('error', 'Kost belum terverifikasi')->withInput();
         }
 
         try {
             DB::beginTransaction();
 
-            // Upload foto KTP
+            // Upload foto KTP jika ada
             $fotoKtpPath = null;
             if ($request->hasFile('foto_ktp')) {
                 $fotoKtpPath = $request->file('foto_ktp')->store('ktp', 'public');
             }
 
-            // Hitung tanggal selesai dan total harga
-           $tanggalMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
-            $tanggalSelesai = $tanggalMulai->copy()->addDays((int) $validated['durasi']);
+            // ✅ Hitung tanggal selesai berdasarkan durasi_type
+            $tanggalMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
 
-            
-            // Hitung total harga berdasarkan durasi
-            $hargaPerHari = $kost->harga / 30; // Asumsi 1 bulan = 30 hari
-            $totalHarga = $hargaPerHari * $request->durasi;
+            $tanggalSelesai = match ($request->durasi_type) {
+                'harian' => $tanggalMulai->copy()->addDays((int) $request->durasi),
+                'mingguan' => $tanggalMulai->copy()->addWeeks((int) $request->durasi),
+                'bulanan' => $tanggalMulai->copy()->addMonths((int) $request->durasi),
+                default => $tanggalMulai->copy()->addDays((int) $request->durasi),
+            };
+
+            // ✅ OPSI 1: Simpan durasi asli (3 bulan tetap 3)
+            // Lebih jelas untuk business logic dan laporan
+            $durasi = $request->durasi;
+            $durasiType = $request->durasi_type;
+
+            // ✅ Hitung total harga berdasarkan harga kamar × durasi
+            $totalHarga = $kamar->harga * $request->durasi;
 
             // Buat booking
             $booking = Booking::create([
-                'kost_id' => $kost->id,
+                'kost_id' => $kamar->kost_id,
+                'kamar_id' => $kamar->id,
                 'user_id' => Auth::id(),
-                'no_ktp' => $request->no_ktp,
-                'foto_ktp' => $fotoKtpPath,
-                'no_hp' => $request->no_hp,
-                'alamat' => $request->alamat,
-                'pekerjaan' => $request->pekerjaan,
                 'tanggal_mulai' => $tanggalMulai,
                 'tanggal_selesai' => $tanggalSelesai,
-                'durasi' => $request->durasi,
+                'durasi' => $durasi, // ✅ Simpan: 3
+                'durasi_type' => $durasiType, // ✅ Simpan: bulanan
                 'total_harga' => $totalHarga,
-                'status' => 'pending', // Akan berubah jadi 'aktif' setelah pembayaran
+                'status' => 'pending',
             ]);
+
+            // Update status kamar
+            $kamar->update(['status' => 'dibooking']);
 
             DB::commit();
 
-            // Redirect ke halaman pembayaran
-            return redirect()->route('payment.create', $booking->id)
-                ->with('success', 'Booking berhasil dibuat. Silakan lanjutkan pembayaran.');
-
+            return redirect()->route('payment.create', $booking->id)->with('success', 'Booking berhasil dibuat. Silakan lanjutkan pembayaran.');
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             // Hapus foto KTP jika ada error
             if (isset($fotoKtpPath) && $fotoKtpPath) {
                 Storage::disk('public')->delete($fotoKtpPath);
             }
 
             Log::error('Error creating booking: ' . $e->getMessage());
-            
+
             return back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
                 ->withInput();
@@ -132,10 +161,10 @@ class BookingController extends Controller
      */
     public function index()
     {
-        $bookings = Booking::with(['kost', 'pembayaran'])
+        $bookings = Booking::with(['kost', 'kamar', 'pembayaran'])
             ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
 
         return view('front.booking.index', compact('bookings'));
     }
@@ -145,7 +174,7 @@ class BookingController extends Controller
      */
     public function show($id)
     {
-        $booking = Booking::with(['kost.pemilik.user', 'pembayaran'])
+        $booking = Booking::with(['kost.pemilik.user', 'kamar', 'pembayaran'])
             ->where('user_id', Auth::id())
             ->findOrFail($id);
 
@@ -158,7 +187,7 @@ class BookingController extends Controller
     public function cancel($id)
     {
         try {
-            $booking = Booking::where('user_id', Auth::id())->findOrFail($id);
+            $booking = Booking::with('kamar')->where('user_id', Auth::id())->findOrFail($id);
 
             // Hanya bisa cancel jika status pending
             if ($booking->status !== 'pending') {
@@ -167,8 +196,13 @@ class BookingController extends Controller
 
             DB::beginTransaction();
 
-            // Update status
+            // Update status booking
             $booking->update(['status' => 'dibatalkan']);
+
+            // Kembalikan status kamar jadi tersedia
+            if ($booking->kamar) {
+                $booking->kamar->update(['status' => 'tersedia']);
+            }
 
             // Jika ada pembayaran, cancel juga
             if ($booking->pembayaran) {
@@ -177,9 +211,7 @@ class BookingController extends Controller
 
             DB::commit();
 
-            return redirect()->route('booking.index')
-                ->with('success', 'Booking berhasil dibatalkan');
-
+            return redirect()->route('booking.index')->with('success', 'Booking berhasil dibatalkan');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal membatalkan booking');

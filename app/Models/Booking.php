@@ -9,20 +9,7 @@ class Booking extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'kost_id',
-        'user_id',
-        'no_ktp',
-        'foto_ktp',
-        'no_hp',
-        'alamat',
-        'pekerjaan',
-        'tanggal_mulai',
-        'tanggal_selesai',
-        'durasi',
-        'total_harga',
-        'status',
-    ];
+    protected $fillable = ['kost_id', 'kamar_id', 'user_id', 'tanggal_mulai', 'tanggal_selesai', 'durasi', 'total_harga', 'status'];
 
     protected $casts = [
         'tanggal_mulai' => 'date',
@@ -36,6 +23,11 @@ class Booking extends Model
     public function kost()
     {
         return $this->belongsTo(Kost::class);
+    }
+
+    public function Kamar()
+    {
+        return $this->belongsTo(Kamar::class);
     }
 
     /**
@@ -106,5 +98,46 @@ class Booking extends Model
     public function getFormattedTotalHargaAttribute()
     {
         return 'Rp ' . number_format($this->total_harga, 0, ',', '.');
+    }
+
+    function penyewaLengkap($penyewa)
+    {
+        return $penyewa && $penyewa->no_ktp && $penyewa->foto_ktp && $penyewa->no_hp && $penyewa->alamat && $penyewa->pekerjaan;
+    }
+
+    /**
+     * Get durasi dalam hari (untuk perhitungan jika diperlukan)
+     */
+    public function getDurasiDalamHariAttribute()
+    {
+        return match($this->durasi_type) {
+            'harian' => $this->durasi,
+            'mingguan' => $this->durasi * 7,
+            'bulanan' => $this->durasi * 30, // Atau gunakan selisih tanggal aktual
+            default => $this->durasi,
+        };
+    }
+
+    /**
+     * Get durasi dalam hari (versi akurat dari tanggal)
+     */
+    public function getDurasiAktualAttribute()
+    {
+        return $this->tanggal_mulai->diffInDays($this->tanggal_selesai);
+    }
+
+    /**
+     * Get formatted durasi untuk display
+     */
+    public function getDurasiFormatAttribute()
+    {
+        $unit = match($this->durasi_type) {
+            'harian' => 'hari',
+            'mingguan' => 'minggu',
+            'bulanan' => 'bulan',
+            default => 'hari',
+        };
+
+        return "{$this->durasi} {$unit}";
     }
 }

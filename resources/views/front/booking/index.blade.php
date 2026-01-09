@@ -4,7 +4,7 @@
 
 @section('content')
 <main class="pt-24 pb-12 container mx-auto px-4">
-    
+
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Riwayat Booking</h1>
         <p class="text-gray-600 mt-2">Kelola dan lihat status booking kost Anda</p>
@@ -29,8 +29,8 @@
                     <!-- Kost Image -->
                     <div class="md:w-48 h-48 md:h-auto">
                         @if(!empty($booking->kost->images) && count($booking->kost->images) > 0)
-                            <img src="{{ asset('storage/' . $booking->kost->images[0]) }}" 
-                                 class="w-full h-full object-cover" 
+                            <img src="{{ asset('storage/' . $booking->kost->images[0]) }}"
+                                 class="w-full h-full object-cover"
                                  alt="{{ $booking->kost->nama }}">
                         @else
                             <div class="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -44,6 +44,14 @@
                         <div class="flex justify-between items-start mb-4">
                             <div>
                                 <h3 class="text-xl font-bold text-gray-800 mb-1">{{ $booking->kost->nama }}</h3>
+
+                                {{-- Info Kamar --}}
+                                @if($booking->kamar)
+                                    <p class="text-sm text-teal-600 font-semibold mb-1">
+                                        🚪 Kamar {{ $booking->kamar->nomor_kamar }}
+                                    </p>
+                                @endif
+
                                 <p class="text-sm text-gray-600">{{ $booking->kost->alamat }}</p>
                             </div>
                             <span class="px-3 py-1 rounded-full text-sm font-semibold {{ $booking->getStatusBadgeClass() }}">
@@ -51,18 +59,21 @@
                             </span>
                         </div>
 
+                        <!-- Ganti bagian grid info -->
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
+                            @if($booking->kamar)
+                            <div>
+                                <p class="text-gray-500">Nomor Kamar</p>
+                                <p class="font-semibold">{{ $booking->kamar->nomor_kamar }}</p>
+                            </div>
+                            @endif
                             <div>
                                 <p class="text-gray-500">Tanggal Mulai</p>
                                 <p class="font-semibold">{{ $booking->tanggal_mulai->format('d M Y') }}</p>
                             </div>
                             <div>
-                                <p class="text-gray-500">Tanggal Selesai</p>
-                                <p class="font-semibold">{{ $booking->tanggal_selesai->format('d M Y') }}</p>
-                            </div>
-                            <div>
                                 <p class="text-gray-500">Durasi</p>
-                                <p class="font-semibold">{{ $booking->durasi }} hari</p>
+                                <p class="font-semibold">{{ $booking->durasi }} {{ $booking->durasi_type }}</p>
                             </div>
                             <div>
                                 <p class="text-gray-500">Total Harga</p>
@@ -84,24 +95,24 @@
 
                         <!-- Action Buttons -->
                         <div class="flex gap-2">
-                            <a href="{{ route('booking.show', $booking->id) }}" 
+                            <a href="{{ route('booking.show', $booking->id) }}"
                                class="flex-1 px-4 py-2 bg-teal-600 text-white text-center rounded-lg font-semibold hover:bg-teal-700 transition">
                                 Lihat Detail
                             </a>
 
                             @if($booking->pembayaran && $booking->pembayaran->isPending())
-                            <a href="{{ route('payment.show', $booking->pembayaran->id) }}" 
+                            <a href="{{ route('payment.show', $booking->pembayaran->id) }}"
                                class="flex-1 px-4 py-2 bg-yellow-500 text-white text-center rounded-lg font-semibold hover:bg-yellow-600 transition">
                                 Bayar Sekarang
                             </a>
                             @endif
 
                             @if($booking->canBeCancelled())
-                            <form action="{{ route('booking.cancel', $booking->id) }}" 
-                                  method="POST" 
+                            <form action="{{ route('booking.cancel', $booking->id) }}"
+                                  method="POST"
                                   onsubmit="return confirm('Yakin ingin membatalkan booking ini?')">
                                 @csrf
-                                <button type="submit" 
+                                <button type="submit"
                                         class="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition">
                                     Batalkan
                                 </button>

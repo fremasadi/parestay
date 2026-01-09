@@ -18,6 +18,7 @@ use App\Http\Controllers\Pemilik\KostController as PemilikKostController;
 use App\Http\Controllers\Pemilik\BookingController as PemilikBookingController;
 use App\Http\Controllers\Pemilik\PembayaranController as PemilikPembayaranController;
 use App\Http\Controllers\Pemilik\ReviewController as PemilikReviewController;
+use App\Http\Controllers\Pemilik\KamarController as PemilikKamarController;
 
 // Front / Public Controllers
 use App\Http\Controllers\Front\FrontController;
@@ -49,7 +50,7 @@ Route::get('/api/kosts', [FrontController::class, 'getKostsJson'])->name('api.ko
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // Resource routes untuk User, Pemilik, Kost, Penyewa
     Route::resource('users', UserController::class);          // admin.users.*
     Route::resource('pemilik', PemilikController::class);     // admin.pemilik.*
@@ -76,9 +77,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:pemilik'])->prefix('pemilik')->name('pemilik.')->group(function () {
-    
+
     // Resource Kost Pemilik
-    Route::resource('kost', PemilikKostController::class);                        // pemilik.kost.*
+    Route::resource('kost', PemilikKostController::class);
+    Route::resource('kamar', PemilikKamarController::class);                     // pemilik.kost.*
 
     // Reviews Pemilik
     Route::get('/reviews', [PemilikReviewController::class, 'index'])->name('reviews.index');
@@ -104,16 +106,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Booking User
-    Route::get('/booking/create/{kost}', [BookingController::class, 'create'])->name('booking.create');
-    Route::post('/booking/store/{kost}', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('/booking/create', [BookingController::class, 'create'])->name('booking.create');
+    Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store');
     Route::get('/booking', [BookingController::class, 'index'])->name('booking.index');
     Route::get('/booking/{id}', [BookingController::class, 'show'])->name('booking.show');
     Route::post('/booking/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
 
     // Payment
     Route::get('/payment/create/{bookingId}', [PaymentController::class, 'create'])->name('payment.create');
-    Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
     Route::get('/payment/check/{id}', [PaymentController::class, 'checkStatus'])->name('payment.check');
+    Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
 
     // History Booking User
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');

@@ -27,16 +27,11 @@ class KostController extends Controller
         $request->validate([
             'owner_id' => 'required|exists:pemiliks,id',
             'nama' => 'required|string|max:100',
-            'harga' => 'required|numeric|min:0',
             'type_harga' => 'required|in:harian,mingguan,bulanan',
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
-            'fasilitas' => 'nullable|string',
             'peraturan' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'total_slot' => 'required|integer|min:1',
-            'slot_tersedia' => 'required|integer|min:0',
-            'status' => 'required|in:tersedia,penuh,menunggu',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'terverifikasi' => 'nullable|boolean',
@@ -45,10 +40,8 @@ class KostController extends Controller
         $data = $request->only([
             'owner_id', 'nama', 'harga', 'type_harga', 'alamat',
             'latitude', 'longitude', 'jenis_kost',
-            'total_slot', 'slot_tersedia', 'status'
         ]);
 
-        $data['fasilitas'] = $request->fasilitas ?: '[]';
         $data['peraturan'] = $request->peraturan ?: '[]';
         $data['terverifikasi'] = $request->has('terverifikasi');
 
@@ -79,17 +72,12 @@ class KostController extends Controller
         $request->validate([
             'owner_id' => 'required|exists:pemiliks,id',
             'nama' => 'required|string|max:100',
-            'harga' => 'required|numeric|min:0',
             'type_harga' => 'required|in:harian,mingguan,bulanan',
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
-            'fasilitas' => 'nullable|string',
             'peraturan' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'delete_images' => 'nullable|array',
-            'total_slot' => 'required|integer|min:1',
-            'slot_tersedia' => 'required|integer|min:0',
-            'status' => 'required|in:tersedia,penuh,menunggu',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'terverifikasi' => 'nullable|boolean',
@@ -101,7 +89,6 @@ class KostController extends Controller
             'total_slot', 'slot_tersedia', 'status'
         ]);
 
-        $data['fasilitas'] = $request->fasilitas ?: '[]';
         $data['peraturan'] = $request->peraturan ?: '[]';
         $data['terverifikasi'] = $request->has('terverifikasi');
 

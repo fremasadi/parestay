@@ -21,7 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',     // ← pastikan ini ada
+        'role', // ← pastikan ini ada
         'status',
     ];
 
@@ -30,10 +30,7 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     /**
      * Get the attributes that should be cast.
@@ -49,20 +46,22 @@ class User extends Authenticatable
     }
 
     public function pemilik()
-{
-    return $this->hasOne(Pemilik::class);
-}
+    {
+        return $this->hasOne(Pemilik::class);
+    }
 
-public function owner()
-{
-    return $this->hasOne(Pemilik::class); // atau nama model pemilik yang sesuai
-}
-
+    public function owner()
+    {
+        return $this->hasOne(Pemilik::class); // atau nama model pemilik yang sesuai
+    }
 
     public function reviews()
     {
         return $this->hasMany(Review::class, 'kost_id');
     }
 
-
+    public function penyewa()
+    {
+        return $this->hasOne(Penyewa::class);
+    }
 }

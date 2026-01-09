@@ -19,6 +19,7 @@
                         <tr>
                             <th>#</th>
                             <th>Kost</th>
+                            <th>Nomer Kamar</th>
                             <th>Penyewa</th>
                             <th>Tanggal Mulai</th>
                             <th>Tanggal Selesai</th>
@@ -37,6 +38,8 @@
                                         {{ Str::limit($booking->kost->alamat ?? '-', 40) }}
                                     </small>
                                 </td>
+                                <td>
+                                    <strong>{{ $booking->kamar->nomor_kamar ?? '-' }}</strong>                                </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar avatar-sm me-2">
