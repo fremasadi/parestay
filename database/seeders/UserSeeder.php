@@ -13,24 +13,17 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        
+
 
         // 🏠 Pemilik Kost
         User::create([
-            'name' => 'Pemilik Kost A',
-            'email' => 'pemilik@parestay.com',
-            'password' => Hash::make('pemilik123'),
-            'role' => 'pemilik',
+            'name' => 'admin',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
             'status' => 'aktif',
         ]);
 
-        // 👤 Penyewa
-        User::create([
-            'name' => 'Penyewa Pertama',
-            'email' => 'penyewa@parestay.com',
-            'password' => Hash::make('penyewa123'),
-            'role' => 'penyewa',
-            'status' => 'aktif',
-        ]);
+
     }
 }
