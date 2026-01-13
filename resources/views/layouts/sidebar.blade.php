@@ -62,7 +62,7 @@
             </li>
 
             {{-- Menu Header - Transaksi (Coming Soon) --}}
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Transaksi</span>
             </li>
 
@@ -85,10 +85,10 @@
                     <i class="menu-icon tf-icons bx bx-money"></i>
                     <div>Komisi <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
                 </a>
-            </li>
+            </li> --}}
 
             {{-- Menu Header - Laporan & Review (Coming Soon) --}}
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Laporan & Review</span>
             </li>
 
@@ -104,14 +104,14 @@
                     <i class="menu-icon tf-icons bx bx-star"></i>
                     <div>Review</div>
                 </a>
-            </li>
+            </li> --}}
         @endif
 
 
         {{-- Pemilik Only --}}
         @if(Auth::user()->role === 'pemilik')
             {{-- Menu Header - Manajemen Kost --}}
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Manajemen Kost</span>
             </li>
 
@@ -127,10 +127,10 @@
                     <i class="menu-icon tf-icons bx bx-building-house"></i>
                     <div>Daftar Kamar Kost Saya</div>
                 </a>
-            </li>
+            </li> --}}
 
             {{-- Menu Header - Transaksi (Coming Soon) --}}
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Transaksi</span>
             </li>
 
@@ -139,17 +139,17 @@
                     <i class="menu-icon tf-icons bx bx-receipt"></i>
                     <div>Penyewaan Aktif <span class="badge badge-center rounded-pill bg-label-secondary ms-2"></span></div>
                 </a>
-            </li>
+            </li> --}}
 
-            <li class="menu-item {{ request()->routeIs('pemilik.pembayaran.*') ? 'active' : '' }}">
+            {{-- <li class="menu-item {{ request()->routeIs('pemilik.pembayaran.*') ? 'active' : '' }}">
                 <a href="{{ route('pemilik.pembayaran.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-credit-card"></i>
                     <div>Pembayaran Aktif</div>
                 </a>
-            </li>
+            </li> --}}
 
             {{-- Menu Header - Laporan (Coming Soon) --}}
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
                 <span class="menu-header-text">Laporan & Review</span>
             </li>
 
@@ -158,14 +158,14 @@
                     <i class="menu-icon tf-icons bx bx-bar-chart"></i>
                     <div>Laporan Pendapatan <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
                 </a>
-            </li>
+            </li> --}}
 
-            <li class="menu-item {{ request()->routeIs('pemilik.reviews.*') ? 'active' : '' }}">
+            {{-- <li class="menu-item {{ request()->routeIs('pemilik.reviews.*') ? 'active' : '' }}">
                 <a href="{{ route('pemilik.reviews.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-star"></i>
                     <div>Review Kost</div>
                 </a>
-            </li>
+            </li> --}}
         @endif
 
     </ul>
