@@ -17,6 +17,8 @@ class PemilikController extends Controller
         return view('admin.pemilik.index', compact('pemiliks'));
     }
 
+    
+
     public function show($id)
     {
         $pemilik = Pemilik::with('user')->findOrFail($id);

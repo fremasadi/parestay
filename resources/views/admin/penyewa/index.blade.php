@@ -8,7 +8,7 @@
         </div>
 
         <div class="card-body">
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success alert-dismissible">
                     <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -23,7 +23,7 @@
                             <th>Email</th>
                             <th>No. KTP</th>
                             <th>No. HP</th>
-                            <th>Status</th>
+                            {{-- <th>Status</th> --}}
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -34,14 +34,22 @@
                                 <td>{{ $penyewa->user->email }}</td>
                                 <td>{{ $penyewa->no_ktp }}</td>
                                 <td>{{ $penyewa->no_hp }}</td>
-                                <td>
-                                    <span class="badge {{ $penyewa->user->status === 'aktif' ? 'bg-label-success' : 'bg-label-secondary' }}">
+                                {{-- <td>
+                                    <span
+                                        class="badge {{ $penyewa->user->status === 'aktif' ? 'bg-label-success' : 'bg-label-secondary' }}">
                                         {{ ucfirst($penyewa->user->status) }}
                                     </span>
-                                </td>
+                                </td> --}}
                                 <td class="text-center">
                                     <div class="btn-group">
-                                        <a href="{{ route('admin.penyewa.edit', $penyewa) }}" class="btn btn-sm btn-warning">
+
+                                        <!-- 👁 SHOW -->
+                                        <a href="{{ route('admin.penyewa.show', $penyewa) }}"
+                                            class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Lihat Detail">
+                                            <i class="bx bx-show"></i>
+                                        </a>
+                                        <a href="{{ route('admin.penyewa.edit', $penyewa) }}"
+                                            class="btn btn-sm btn-warning">
                                             <i class="bx bx-edit"></i>
                                         </a>
                                         <!-- <form action="{{ route('admin.penyewa.destroy', $penyewa) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus penyewa ini?')">
