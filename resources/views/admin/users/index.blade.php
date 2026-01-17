@@ -10,7 +10,7 @@
         </div>
 
         <div class="card-body">
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success alert-dismissible" role="alert">
                     <i class="bx bx-check-circle me-1"></i>
                     {{ session('success') }}
@@ -43,33 +43,36 @@
                                 </td>
                                 <td>{{ $user->email }}</td>
                                 <td>
-                                    <span class="badge 
-                                        @if($user->role === 'admin') bg-label-danger 
+                                    <span
+                                        class="badge 
+                                        @if ($user->role === 'admin') bg-label-danger 
                                         @elseif($user->role === 'pemilik') bg-label-info 
                                         @else bg-label-success @endif">
                                         {{ ucfirst($user->role) }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge 
-                                        {{ $user->status === 'aktif' ? 'bg-label-success' : 'bg-label-secondary' }}">
-                                        {{ ucfirst($user->status) }}
-                                    </span>
+                                    @if (($user->status ?? '') == 'aktif')
+                                        <span class="badge bg-success">Terverifikasi</span>
+                                    @else
+                                        <span class="badge bg-danger">Belum Terverifikasi</span>
+                                    @endif
                                 </td>
+
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.users.edit', $user) }}" 
-                                           class="btn btn-sm btn-icon btn-warning" 
-                                           data-bs-toggle="tooltip" title="Edit">
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                            class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip"
+                                            title="Edit">
                                             <i class="bx bx-edit"></i>
                                         </a>
-                                        <!-- <form action="{{ route('admin.users.destroy', $user) }}" 
-                                              method="POST" 
+                                        <!-- <form action="{{ route('admin.users.destroy', $user) }}"
+                                              method="POST"
                                               onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')"
                                               class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-icon btn-danger" 
+                                            <button type="submit" class="btn btn-sm btn-icon btn-danger"
                                                     data-bs-toggle="tooltip" title="Hapus">
                                                 <i class="bx bx-trash"></i>
                                             </button>
@@ -91,14 +94,14 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Tooltip aktif (dari Sneat)
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Tooltip aktif (dari Sneat)
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function(tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
             });
-        });
-    </script>
+        </script>
     @endpush
 </x-app-layout>

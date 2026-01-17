@@ -1,11 +1,19 @@
 <x-app-layout>
-    <h4 class="mb-4">Edit Pemilik</h4>
+    <div class="card">
+        <div class="card-header">
+            <h5>Edit Pemilik</h5>
+        </div>
 
-    <form action="{{ route('admin.pemilik.update', $pemilik->id) }}" method="POST">
-        @csrf
-        @method('PUT')
-        @include('admin.pemilik._form')
-        <button class="btn btn-primary mt-3">Perbarui</button>
-        <a href="{{ route('admin.pemilik.index') }}" class="btn btn-secondary mt-3">Kembali</a>
-    </form>
+        <div class="card-body">
+            <form action="{{ route('admin.pemilik.update', $pemilik->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+
+                @include('admin.pemilik._form')
+
+                <button class="btn btn-primary">Update</button>
+                <a href="{{ route('admin.pemilik.index') }}" class="btn btn-secondary">Kembali</a>
+            </form>
+        </div>
+    </div>
 </x-app-layout>

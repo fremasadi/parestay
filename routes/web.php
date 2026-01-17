@@ -49,49 +49,55 @@ Route::get('/api/kosts', [FrontController::class, 'getKostsJson'])->name('api.ko
 | Admin Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // Resource routes untuk User, Pemilik, Kost, Penyewa
+        Route::resource('users', UserController::class); // admin.users.*
+        Route::resource('pemilik', PemilikController::class); // admin.pemilik.*
+        Route::resource('kost', KostController::class); // admin.kost.*
+        Route::resource('penyewa', PenyewaController::class); // admin.penyewa.*
 
-    // Resource routes untuk User, Pemilik, Kost, Penyewa
-    Route::resource('users', UserController::class);          // admin.users.*
-    Route::resource('pemilik', PemilikController::class);     // admin.pemilik.*
-    Route::resource('kost', KostController::class);           // admin.kost.*
-    Route::resource('penyewa', PenyewaController::class);     // admin.penyewa.*
+        // Reviews Admin
+        Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/statistics', [AdminReviewController::class, 'statistics'])->name('reviews.statistics');
+        Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
 
-    // Reviews Admin
-    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
-    Route::get('/reviews/statistics', [AdminReviewController::class, 'statistics'])->name('reviews.statistics');
-    Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
-    Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+        // Booking & Pembayaran Admin
+        Route::resource('booking', AdminBookingController::class); // admin.booking.*
+        Route::get('pembayaran', [AdminPembayaranController::class, 'index'])->name('pembayaran.index');
 
-    // Booking & Pembayaran Admin
-    Route::resource('booking', AdminBookingController::class);                   // admin.booking.*
-    Route::get('pembayaran', [AdminPembayaranController::class, 'index'])->name('pembayaran.index');
-
-    // Kursus Admin
-    Route::resource('kursus', KursusController::class);                           // admin.kursus.*
-});
+        // Kursus Admin
+        Route::resource('kursus', KursusController::class)->parameters([
+            'kursus' => 'kursus',
+        ]);
+    });
 
 /*
 |--------------------------------------------------------------------------
 | Pemilik Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:pemilik'])->prefix('pemilik')->name('pemilik.')->group(function () {
+Route::middleware(['auth', 'role:pemilik'])
+    ->prefix('pemilik')
+    ->name('pemilik.')
+    ->group(function () {
+        // Resource Kost Pemilik
+        Route::resource('kost', PemilikKostController::class);
+        Route::resource('kamar', PemilikKamarController::class); // pemilik.kost.*
 
-    // Resource Kost Pemilik
-    Route::resource('kost', PemilikKostController::class);
-    Route::resource('kamar', PemilikKamarController::class);                     // pemilik.kost.*
+        // Reviews Pemilik
+        Route::get('/reviews', [PemilikReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/statistics', [PemilikReviewController::class, 'statistics'])->name('reviews.statistics');
+        Route::get('/reviews/kost/{kost}', [PemilikReviewController::class, 'byKost'])->name('reviews.by-kost');
+        Route::get('/reviews/{review}', [PemilikReviewController::class, 'show'])->name('reviews.show');
 
-    // Reviews Pemilik
-    Route::get('/reviews', [PemilikReviewController::class, 'index'])->name('reviews.index');
-    Route::get('/reviews/statistics', [PemilikReviewController::class, 'statistics'])->name('reviews.statistics');
-    Route::get('/reviews/kost/{kost}', [PemilikReviewController::class, 'byKost'])->name('reviews.by-kost');
-    Route::get('/reviews/{review}', [PemilikReviewController::class, 'show'])->name('reviews.show');
-
-    // Booking & Pembayaran Pemilik
-    Route::get('/booking', [PemilikBookingController::class, 'index'])->name('booking.index');
-    Route::get('/pembayaran', [PemilikPembayaranController::class, 'index'])->name('pembayaran.index');
-});
+        // Booking & Pembayaran Pemilik
+        Route::get('/booking', [PemilikBookingController::class, 'index'])->name('booking.index');
+        Route::get('/pembayaran', [PemilikPembayaranController::class, 'index'])->name('pembayaran.index');
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -99,7 +105,6 @@ Route::middleware(['auth', 'role:pemilik'])->prefix('pemilik')->name('pemilik.')
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () {
-
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -138,7 +143,9 @@ Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payme
 */
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Auth routes (login, register, etc.)
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

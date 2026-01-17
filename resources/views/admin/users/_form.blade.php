@@ -16,10 +16,9 @@
             {{-- Nama --}}
             <div class="col-md-6">
                 <label for="name" class="form-label">Nama Lengkap</label>
-                <input type="text" name="name" id="name"
-                       value="{{ old('name', $user->name ?? '') }}"
-                       class="form-control @error('name') is-invalid @enderror"
-                       placeholder="Masukkan nama lengkap" required>
+                <input type="text" name="name" id="name" value="{{ old('name', $user->name ?? '') }}"
+                    class="form-control @error('name') is-invalid @enderror" placeholder="Masukkan nama lengkap"
+                    required>
                 @error('name')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -28,10 +27,9 @@
             {{-- Email --}}
             <div class="col-md-6">
                 <label for="email" class="form-label">Email</label>
-                <input type="email" name="email" id="email"
-                       value="{{ old('email', $user->email ?? '') }}"
-                       class="form-control @error('email') is-invalid @enderror"
-                       placeholder="Masukkan email pengguna" required>
+                <input type="email" name="email" id="email" value="{{ old('email', $user->email ?? '') }}"
+                    class="form-control @error('email') is-invalid @enderror" placeholder="Masukkan email pengguna"
+                    required>
                 @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -41,9 +39,9 @@
             <div class="col-md-6">
                 <label for="password" class="form-label">Password</label>
                 <input type="password" name="password" id="password"
-                       class="form-control @error('password') is-invalid @enderror"
-                       placeholder="{{ isset($user) ? 'Kosongkan jika tidak ingin ubah password' : 'Minimal 6 karakter' }}"
-                       {{ isset($user) ? '' : 'required' }}>
+                    class="form-control @error('password') is-invalid @enderror"
+                    placeholder="{{ isset($user) ? 'Kosongkan jika tidak ingin ubah password' : 'Minimal 6 karakter' }}"
+                    {{ isset($user) ? '' : 'required' }}>
                 @error('password')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
@@ -52,12 +50,14 @@
             {{-- Role --}}
             <div class="col-md-3">
                 <label for="role" class="form-label">Role</label>
-                <select name="role" id="role"
-                        class="form-select @error('role') is-invalid @enderror" required>
+                <select name="role" id="role" class="form-select @error('role') is-invalid @enderror" required>
                     <option value="">-- Pilih Role --</option>
-                    <option value="admin" {{ old('role', $user->role ?? '') === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="pemilik" {{ old('role', $user->role ?? '') === 'pemilik' ? 'selected' : '' }}>Pemilik</option>
-                    <option value="penyewa" {{ old('role', $user->role ?? '') === 'penyewa' ? 'selected' : '' }}>Penyewa</option>
+                    <option value="admin" {{ old('role', $user->role ?? '') === 'admin' ? 'selected' : '' }}>Admin
+                    </option>
+                    <option value="pemilik" {{ old('role', $user->role ?? '') === 'pemilik' ? 'selected' : '' }}>Pemilik
+                    </option>
+                    <option value="penyewa" {{ old('role', $user->role ?? '') === 'penyewa' ? 'selected' : '' }}>
+                        Penyewa</option>
                 </select>
                 @error('role')
                     <div class="invalid-feedback">{{ $message }}</div>
@@ -67,11 +67,13 @@
             {{-- Sztatus --}}
             <div class="col-md-3">
                 <label for="status" class="form-label">Status</label>
-                <select name="status" id="status"
-                        class="form-select @error('status') is-invalid @enderror" required>
+                <select name="status" id="status" class="form-select @error('status') is-invalid @enderror"
+                    required>
                     <option value="">-- Pilih Status --</option>
-                    <option value="aktif" {{ old('status', $user->status ?? '') === 'aktif' ? 'selected' : '' }}>Aktif</option>
-                    <option value="nonaktif" {{ old('status', $user->status ?? '') === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                    <option value="aktif" {{ old('status', $user->status ?? '') === 'aktif' ? 'selected' : '' }}>
+                        Terverifikasi</option>
+                    <option value="nonaktif" {{ old('status', $user->status ?? '') === 'nonaktif' ? 'selected' : '' }}>
+                        Belum Terverifikasi</option>
                 </select>
                 @error('status')
                     <div class="invalid-feedback">{{ $message }}</div>

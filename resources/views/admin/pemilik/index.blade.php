@@ -11,7 +11,7 @@
 
         <div class="card-body">
             {{-- Alert sukses --}}
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bx bx-check-circle me-1"></i>
                     {{ session('success') }}
@@ -28,9 +28,11 @@
                             <th>Email</th>
                             <th>No. KTP</th>
                             <th>No. HP</th>
-                            <th>Bank</th>
+                            <th>Status</th>
+
+                            {{-- <th>Bank</th>
                             <th>No. Rekening</th>
-                            <th>Atas Nama</th>
+                            <th>Atas Nama</th> --}}
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -49,25 +51,40 @@
                                 <td>{{ $pemilik->user->email ?? '-' }}</td>
                                 <td>{{ $pemilik->no_ktp }}</td>
                                 <td>{{ $pemilik->no_hp }}</td>
-                                <td>{{ $pemilik->nama_bank ?? '-' }}</td>
+                                <td>
+                                    @if (($pemilik->user->status ?? '') == 'aktif')
+                                        <span class="badge bg-success">Terverifikasi</span>
+                                    @else
+                                        <span class="badge bg-danger">Belum Terverifikasi</span>
+                                    @endif
+                                </td>
+
+
+                                {{-- <td>{{ $pemilik->nama_bank ?? '-' }}</td>
                                 <td>{{ $pemilik->rekening_bank ?? '-' }}</td>
-                                <td>{{ $pemilik->atas_nama ?? '-' }}</td>
+                                <td>{{ $pemilik->atas_nama ?? '-' }}</td> --}}
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.pemilik.edit', $pemilik->id) }}" 
-                                           class="btn btn-sm btn-icon btn-warning" 
-                                           data-bs-toggle="tooltip" title="Edit">
+                                        {{-- DETAIL / VIEW --}}
+                                        <a href="{{ route('admin.pemilik.show', $pemilik->id) }}"
+                                            class="btn btn-sm btn-icon btn-info" data-bs-toggle="tooltip"
+                                            title="Lihat Detail">
+                                            <i class="bx bx-show"></i>
+                                        </a>
+                                        <a href="{{ route('admin.pemilik.edit', $pemilik->id) }}"
+                                            class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip"
+                                            title="Edit">
                                             <i class="bx bx-edit"></i>
                                         </a>
-                                        <!-- <form action="{{ route('admin.pemilik.destroy', $pemilik->id) }}" 
-                                              method="POST" 
+                                        <!-- <form action="{{ route('admin.pemilik.destroy', $pemilik->id) }}"
+                                              method="POST"
                                               class="d-inline"
                                               onsubmit="return confirm('Yakin ingin menghapus data pemilik ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" 
-                                                    class="btn btn-sm btn-icon btn-danger" 
-                                                    data-bs-toggle="tooltip" 
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-icon btn-danger"
+                                                    data-bs-toggle="tooltip"
                                                     title="Hapus">
                                                 <i class="bx bx-trash"></i>
                                             </button>
@@ -94,14 +111,14 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Aktifkan tooltip bawaan Sneat
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Aktifkan tooltip bawaan Sneat
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function(tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
             });
-        });
-    </script>
+        </script>
     @endpush
 </x-app-layout>
