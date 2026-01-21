@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 
 class RegisteredUserController extends Controller
 {
@@ -35,45 +38,47 @@ class RegisteredUserController extends Controller
     /**
      * Proses registrasi pemilik
      */
-    public function storePemilik(Request $request): RedirectResponse
+    public function storePemilik(Request $request)
     {
+        Log::info('REGISTER PEMILIK REQUEST', $request->all());
+
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'no_ktp' => ['required', 'string', 'max:30', 'unique:pemiliks,no_ktp'],
-            'no_hp' => ['required', 'string', 'max:20'],
-            'alamat' => ['nullable', 'string'],
-            'rekening_bank' => ['required', 'string', 'max:50'],
-            'nama_bank' => ['required', 'string', 'max:50'],
-            'atas_nama' => ['required', 'string', 'max:255'],
+            'name' => 'required|string',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|confirmed|min:8',
+            'no_hp' => 'required|string',
+            'no_ktp' => 'required|string|unique:pemiliks,no_ktp',
+            'alamat' => 'required|string',
+            'rekening_bank' => 'required|string',
+            'nama_bank' => 'required|string',
+            'atas_nama' => 'required|string',
         ]);
 
-        // Buat user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'pemilik',
-            'status' => 'aktif',
-        ]);
+        DB::transaction(function () use ($request) {
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => 'pemilik',
+                'status' => 'nonaktif',
+            ]);
 
-        // Buat data pemilik
-        Pemilik::create([
-            'user_id' => $user->id,
-            'no_ktp' => $request->no_ktp,
-            'no_hp' => $request->no_hp,
-            'alamat' => $request->alamat,
-            'rekening_bank' => $request->rekening_bank,
-            'nama_bank' => $request->nama_bank,
-            'atas_nama' => $request->atas_nama,
-        ]);
+            Pemilik::create([
+                'user_id' => $user->id,
+                'no_ktp' => $request->no_ktp,
+                'no_hp' => $request->no_hp,
+                'alamat' => $request->alamat,
+                'rekening_bank' => $request->rekening_bank,
+                'nama_bank' => $request->nama_bank,
+                'atas_nama' => $request->atas_nama,
+            ]);
 
-        event(new Registered($user));
-        Auth::login($user);
+            Auth::login($user);
+        });
 
-        return redirect()->route('dashboard')->with('success', 'Registrasi berhasil! Selamat datang sebagai Pemilik Kost.');
-    }
+        return redirect()->route('login')
+        ->with('success', 'Registrasi berhasil. Silakan tunggu konfirmasi admin.');
+        }
 
     /**
      * Tampilkan form registrasi penyewa
@@ -90,7 +95,7 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'no_ktp' => ['required', 'string', 'max:30', 'unique:penyewas,no_ktp'],
             'foto_ktp' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
@@ -124,7 +129,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-            return redirect()->intended('/')->with('success', 'Registrasi berhasil! Selamat datang sebagai Penyewa.');
+        return redirect()->intended('/')->with('success', 'Registrasi berhasil! Selamat datang sebagai Penyewa.');
     }
 
     // Method lama tetap ada untuk fallback
