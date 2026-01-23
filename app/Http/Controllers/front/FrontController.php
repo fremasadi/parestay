@@ -87,7 +87,7 @@ class FrontController extends Controller
             ]);
         }
 
-        return view('front.landing', compact('kosts'));
+        return view('front.landin', compact('kosts'));
     }
 
     public function search(Request $request)
