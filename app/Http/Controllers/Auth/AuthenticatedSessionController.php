@@ -34,17 +34,7 @@ class AuthenticatedSessionController extends Controller
 
         // 🚫 CEK STATUS UNTUK ADMIN & PEMILIK
         if (in_array($user->role, ['admin', 'pemilik'])) {
-            if ($user->status !== 'aktif') {
-                auth()->logout();
 
-                return redirect()
-                    ->route('login')
-                    ->withErrors([
-                        'email' => 'Akun Anda belum terverifikasi / belum aktif. Silakan hubungi admin.',
-                    ]);
-            }
-
-            // ✅ Jika aktif → masuk dashboard
             return redirect()->intended('/dashboard');
         }
 
