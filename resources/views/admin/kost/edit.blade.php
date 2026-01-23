@@ -4,7 +4,7 @@
             <h5 class="mb-0"><i class="bx bx-edit me-2"></i> Edit Kost</h5>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.kost.update', $kost) }}" method="POST">
+            <form action="{{ route('admin.kost.update', $kost) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 @include('admin.kost._form')
