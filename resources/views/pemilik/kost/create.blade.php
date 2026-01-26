@@ -16,6 +16,9 @@
                     <a href="{{ route('pemilik.kost.index') }}" class="btn btn-secondary">Batal</a>
                     <button type="submit" class="btn btn-primary">Simpan</button>
                 </div>
+                <div class="mt-3 text-end">
+                    <button type="submit" class="btn btn-primary">Simpan dengan 10 data</button>
+                </div>
             </form>
         </div>
     </div>

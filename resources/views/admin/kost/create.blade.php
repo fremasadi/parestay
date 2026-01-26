@@ -9,7 +9,7 @@
                 @include('admin.kost._form')
                 @include('components.image-uploader', [
                     'name' => 'images',
-                    'label' => 'Foto Kost (bisa drag & drop)',
+                    'label' => 'Foto Kos (bisa drag & drop)',
                     'existing' => $kost->images ?? []
                 ])
                 <div class="mt-3 text-end">

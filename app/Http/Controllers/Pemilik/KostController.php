@@ -12,9 +12,7 @@ class KostController extends Controller
     public function index()
     {
         $pemilikId = Auth::user()->pemilik->id;
-        $kosts = Kost::where('owner_id', $pemilikId)
-                    ->latest()
-                    ->paginate(10);
+        $kosts = Kost::where('owner_id', $pemilikId)->latest()->paginate(10);
 
         return view('pemilik.kost.index', compact('kosts'));
     }
@@ -34,24 +32,29 @@ class KostController extends Controller
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
             'peraturan' => 'nullable|string',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
 
-        $data = $request->only([
-            'nama', 'harga', 'type_harga', 'alamat',
-            'latitude', 'longitude', 'jenis_kost',
-            'total_slot', 'slot_tersedia', 'status'
-        ]);
+        $data = $request->only(['nama', 'harga', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost', 'total_slot', 'slot_tersedia', 'status']);
 
         $data['owner_id'] = $pemilikId;
         $data['peraturan'] = $request->peraturan ?: '[]';
         $data['terverifikasi'] = false;
+        // Upload gambar
+        $imagePaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('kost-images', 'public');
+                $imagePaths[] = $path;
+            }
+        }
+        $data['images'] = $imagePaths;
 
         Kost::create($data);
 
-        return redirect()->route('pemilik.kost.index')
-            ->with('success', 'Kost berhasil ditambahkan dan menunggu verifikasi admin.');
+        return redirect()->route('pemilik.kost.index')->with('success', 'Kost berhasil ditambahkan dan menunggu verifikasi admin.');
     }
 
     public function edit(Kost $kost)
@@ -69,22 +72,41 @@ class KostController extends Controller
             'type_harga' => 'required|in:harian,mingguan,bulanan',
             'alamat' => 'required|string',
             'jenis_kost' => 'required|in:putra,putri,bebas',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'peraturan' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
         ]);
 
-        $data = $request->only([
-            'nama', 'type_harga', 'alamat',
-            'latitude', 'longitude', 'jenis_kost',
-        ]);
+        $data = $request->only(['nama', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost']);
 
         $data['peraturan'] = $request->peraturan ?: '[]';
+        $data['terverifikasi'] = $request->has('terverifikasi');
+
+        // Gambar lama
+        $existingImages = $kost->images ?? [];
+
+        // Hapus gambar
+        if ($request->has('delete_images')) {
+            foreach ($request->delete_images as $img) {
+                Storage::disk('public')->delete($img);
+                $existingImages = array_filter($existingImages, fn($i) => $i !== $img);
+            }
+        }
+
+        // Upload baru
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('kost-images', 'public');
+                $existingImages[] = $path;
+            }
+        }
+
+        $data['images'] = array_values($existingImages);
 
         $kost->update($data);
 
-        return redirect()->route('pemilik.kost.index')
-            ->with('success', 'Data kost berhasil diperbarui.');
+        return redirect()->route('pemilik.kost.index')->with('success', 'Data kost berhasil diperbarui.');
     }
 
     public function destroy(Kost $kost)
@@ -92,8 +114,7 @@ class KostController extends Controller
         $this->authorizeAccess($kost);
         $kost->delete();
 
-        return redirect()->route('pemilik.kost.index')
-            ->with('success', 'Kost berhasil dihapus.');
+        return redirect()->route('pemilik.kost.index')->with('success', 'Kost berhasil dihapus.');
     }
 
     private function authorizeAccess(Kost $kost)
