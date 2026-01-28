@@ -12,7 +12,13 @@ class KamarController extends Controller
 {
     public function index()
     {
-        $kamars = Kamar::with('kost')->latest()->get();
+        $kamars = Kamar::with('kost')
+            ->whereHas('kost', function ($query) {
+                $query->where('owner_id', auth()->user()->pemilik->id);
+            })
+            ->latest()
+            ->get();
+
         return view('pemilik.kamar.index', compact('kamars'));
     }
 
