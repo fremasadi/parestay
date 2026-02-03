@@ -26,8 +26,8 @@
                     <thead class="table-light">
                         <tr>
                             <th>Nama Kost</th>
-                            <th>Harga</th>
-                            <th>Type Harga</th>
+                            {{-- <th>Harga</th> --}}
+                            {{-- <th>Type Harga</th> --}}
                             <th>Jumlah Kamar</th>
                             {{-- <th>Status</th> --}}
                             <th>Verifikasi</th>
@@ -38,8 +38,8 @@
                         @forelse($kosts as $kost)
                             <tr>
                                 <td>{{ $kost->nama }}</td>
-                                <td>Rp{{ number_format($kost->harga, 0, ',', '.') }}</td>
-                                <td>{{ $kost->type_harga ?? '-' }}</td>
+                                {{-- <td>Rp{{ number_format($kost->harga, 0, ',', '.') }}</td> --}}
+                                {{-- <td>{{ $kost->type_harga ?? '-' }}</td> --}}
                                 <td>
                                     <span class="badge bg-label-info">
                                         {{ $kost->kamars_count }} kamar
