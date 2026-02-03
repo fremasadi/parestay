@@ -18,7 +18,7 @@
     </div>
 
     {{-- Harga & Tipe Harga --}}
-    <div class="row mb-3">
+    {{-- <div class="row mb-3">
 
         <div class="col-md-6">
             <label for="type_harga" class="form-label fw-semibold">Tipe Harga</label>
@@ -28,7 +28,7 @@
                 <option value="bulanan" {{ old('type_harga', $kost->type_harga ?? 'bulanan') == 'bulanan' ? 'selected' : '' }}>Bulanan</option>
             </select>
         </div>
-    </div>
+    </div> --}}
 
     {{-- Alamat --}}
     <div class="row mb-3">

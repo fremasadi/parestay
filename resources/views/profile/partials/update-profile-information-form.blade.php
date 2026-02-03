@@ -13,7 +13,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
         @csrf
         @method('patch')
 
@@ -45,6 +45,45 @@
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="no_hp" value="No HP" />
+            <x-text-input id="no_hp" name="no_hp"
+                type="text"
+                class="block mt-1 w-full"
+                value="{{ old('no_hp', $user->penyewa->no_hp ?? '') }}" />
+        </div>
+
+
+
+        <div class="mt-4">
+            <x-input-label for="pekerjaan" value="Pekerjaan" />
+            <x-text-input id="pekerjaan" name="pekerjaan"
+                type="text"
+                class="block mt-1 w-full"
+                value="{{ old('pekerjaan', $user->penyewa->pekerjaan ?? '') }}" />
+        </div>
+
+        <div class="mt-4">
+            <x-input-label for="alamat" value="Alamat" />
+            <textarea name="alamat"
+                class="block mt-1 w-full border-gray-300 rounded-md shadow-sm">{{ old('alamat', $user->penyewa->alamat ?? '') }}</textarea>
+        </div>
+
+        <div class="mt-4">
+            <x-input-label value="Foto KTP" />
+
+            {{-- Preview --}}
+            @if($user->penyewa && $user->penyewa->foto_ktp)
+                <img src="{{ asset('storage/' . $user->penyewa->foto_ktp) }}"
+                     class="w-64 mb-3 rounded border">
+            @endif
+
+            <input type="file"
+                   name="foto_ktp"
+                   class="block w-full text-sm border rounded p-2"
+                   accept="image/*">
         </div>
 
         <div class="flex items-center gap-4">

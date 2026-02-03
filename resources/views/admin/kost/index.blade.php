@@ -21,7 +21,7 @@
                         <tr>
                             <th>Nama Kost</th>
                             <th>Pemilik</th>
-                            <th>Type Harga</th>
+                            {{-- <th>Type Harga</th> --}}
                             <th>Verifikasi</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -31,7 +31,7 @@
                             <tr>
                                 <td>{{ $kost->nama }}</td>
                                 <td>{{ $kost->pemilik->user->name ?? '-' }}</td>
-                                <td>{{ $kost->type_harga ?? '-' }}</td>
+                                {{-- <td>{{ $kost->type_harga ?? '-' }}</td> --}}
                                 <td>
                                     <span class="badge {{ $kost->terverifikasi ? 'bg-label-success' : 'bg-label-warning' }}">
                                         {{ $kost->terverifikasi ? 'Terverifikasi' : 'Belum' }}

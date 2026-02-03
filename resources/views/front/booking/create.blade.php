@@ -92,7 +92,7 @@
                         </div>
 
                         <!-- Foto KTP -->
-                        <div>
+                        {{-- <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Foto KTP <span class="text-red-500">*</span>
                             </label>
@@ -109,7 +109,7 @@
                             @error('foto_ktp')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
-                        </div>
+                        </div> --}}
 
                         <!-- Nomor HP -->
                         <div>

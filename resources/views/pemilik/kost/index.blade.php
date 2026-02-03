@@ -28,7 +28,8 @@
                             <th>Nama Kost</th>
                             <th>Harga</th>
                             <th>Type Harga</th>
-                            <th>Status</th>
+                            <th>Jumlah Kamar</th>
+                            {{-- <th>Status</th> --}}
                             <th>Verifikasi</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -40,6 +41,11 @@
                                 <td>Rp{{ number_format($kost->harga, 0, ',', '.') }}</td>
                                 <td>{{ $kost->type_harga ?? '-' }}</td>
                                 <td>
+                                    <span class="badge bg-label-info">
+                                        {{ $kost->kamars_count }} kamar
+                                    </span>
+                                </td>
+                                {{-- <td>
                                     <span
                                         class="badge
                                         @if ($kost->status === 'tersedia') bg-label-success
@@ -47,7 +53,7 @@
                                         @else bg-label-secondary @endif">
                                         {{ ucfirst($kost->status) }}
                                     </span>
-                                </td>
+                                </td> --}}
                                 <td>
                                     <span
                                         class="badge {{ $kost->terverifikasi ? 'bg-label-success' : 'bg-label-warning' }}">

@@ -12,7 +12,11 @@ class KostController extends Controller
     public function index()
     {
         $pemilikId = Auth::user()->pemilik->id;
-        $kosts = Kost::where('owner_id', $pemilikId)->latest()->paginate(10);
+
+        $kosts = Kost::where('owner_id', $pemilikId)
+            ->withCount('kamars') // 🔥 hitung jumlah kamar
+            ->latest()
+            ->paginate(10);
 
         return view('pemilik.kost.index', compact('kosts'));
     }

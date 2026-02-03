@@ -59,11 +59,11 @@
         </li>
 
         {{-- Menu Header - Transaksi (Coming Soon) --}}
-        {{-- <li class="menu-header small text-uppercase">
+        <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Transaksi</span>
-        </li> --}}
+        </li>
 
-        {{-- <li class="menu-item {{ request()->routeIs('admin.booking.*') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->routeIs('admin.booking.*') ? 'active' : '' }}">
             <a href="{{ route('admin.booking.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-receipt"></i>
                 <div>Booking</div>
@@ -82,10 +82,10 @@
                 <i class="menu-icon tf-icons bx bx-money"></i>
                 <div>Komisi <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
             </a>
-        </li> --}}
+        </li>
 
         {{-- Menu Header - Laporan & Review (Coming Soon) --}}
-        {{-- <li class="menu-header small text-uppercase">
+        <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Laporan & Review</span>
         </li>
 
@@ -101,7 +101,7 @@
                 <i class="menu-icon tf-icons bx bx-star"></i>
                 <div>Review</div>
             </a>
-        </li> --}}
+        </li>
 
     </ul>
 </aside>

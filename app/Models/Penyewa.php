@@ -9,14 +9,7 @@ class Penyewa extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'user_id',
-        'no_ktp',
-        'no_hp',
-        'alamat',
-        'pekerjaan',
-            'foto_ktp',
-    ];
+    protected $fillable = ['user_id', 'no_ktp', 'no_hp', 'alamat', 'pekerjaan', 'foto_ktp'];
 
     /**
      * Relasi ke model User
@@ -25,5 +18,4 @@ class Penyewa extends Model
     {
         return $this->belongsTo(User::class);
     }
-
 }
