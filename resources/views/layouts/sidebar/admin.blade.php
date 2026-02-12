@@ -77,12 +77,12 @@
             </a>
         </li>
 
-        <li class="menu-item disabled">
+        {{-- <li class="menu-item disabled">
             <a href="#" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-money"></i>
                 <div>Komisi <span class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
             </a>
-        </li>
+        </li> --}}
 
         {{-- Menu Header - Laporan & Review (Coming Soon) --}}
         {{-- <li class="menu-header small text-uppercase">
