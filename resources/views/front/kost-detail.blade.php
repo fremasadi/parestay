@@ -27,7 +27,7 @@
                         <img src="{{ asset('storage/' . $kost->images[0]) }}"
                              class="w-full h-96 object-cover rounded-xl cursor-pointer"
                              onclick="openViewer(0)">
-                    </div>
+                    </div>  
 
                     @if(count($kost->images) > 1)
                     <div class="grid grid-cols-2 gap-4">

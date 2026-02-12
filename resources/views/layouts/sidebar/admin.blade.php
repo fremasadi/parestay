@@ -85,7 +85,7 @@
         </li>
 
         {{-- Menu Header - Laporan & Review (Coming Soon) --}}
-        <li class="menu-header small text-uppercase">
+        {{-- <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Laporan & Review</span>
         </li>
 
@@ -101,7 +101,7 @@
                 <i class="menu-icon tf-icons bx bx-star"></i>
                 <div>Review</div>
             </a>
-        </li>
+        </li> --}}
 
     </ul>
 </aside>
