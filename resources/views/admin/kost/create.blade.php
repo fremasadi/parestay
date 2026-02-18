@@ -7,11 +7,11 @@
             <form action="{{ route('admin.kost.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @include('admin.kost._form')
-                @include('components.image-uploader', [
+                {{-- @include('components.image-uploader', [
                     'name' => 'images',
                     'label' => 'Foto Kos (bisa drag & drop)',
                     'existing' => $kost->images ?? []
-                ])
+                ]) --}}
                 <div class="mt-3 text-end">
                     <a href="{{ route('admin.kost.index') }}" class="btn btn-secondary">Batal</a>
                     <button type="submit" class="btn btn-primary">Simpan</button>
@@ -19,5 +19,5 @@
             </form>
         </div>
     </div>
-    
+
 </x-app-layout>

@@ -61,6 +61,12 @@ class KostController extends Controller
             ->with('success', 'Data kost berhasil ditambahkan.');
     }
 
+    public function show(Kost $kost)
+    {
+        $kost->load(['pemilik.user', 'kamars', 'reviews.reviewer', 'bookings']);
+        return view('admin.kost.show', compact('kost'));
+    }
+
     public function edit(Kost $kost)
     {
         $pemiliks = Pemilik::with('user')->get();

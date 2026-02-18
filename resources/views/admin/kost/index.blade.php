@@ -8,7 +8,7 @@
         </div>
 
         <div class="card-body">
-            @if(session('success'))
+            @if (session('success'))
                 <div class="alert alert-success alert-dismissible" role="alert">
                     <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -22,7 +22,7 @@
                             <th>Nama Kost</th>
                             <th>Pemilik</th>
                             {{-- <th>Type Harga</th> --}}
-                            <th>Verifikasi</th>
+                            {{-- <th>Verifikasi</th> --}}
                             <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
@@ -32,16 +32,24 @@
                                 <td>{{ $kost->nama }}</td>
                                 <td>{{ $kost->pemilik->user->name ?? '-' }}</td>
                                 {{-- <td>{{ $kost->type_harga ?? '-' }}</td> --}}
-                                <td>
-                                    <span class="badge {{ $kost->terverifikasi ? 'bg-label-success' : 'bg-label-warning' }}">
+                                {{-- <td>
+                                    <span
+                                        class="badge {{ $kost->terverifikasi ? 'bg-label-success' : 'bg-label-warning' }}">
                                         {{ $kost->terverifikasi ? 'Terverifikasi' : 'Belum' }}
                                     </span>
-                                </td>
+                                </td> --}}
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.kost.edit', $kost) }}" class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip" title="Edit">
-                                            <i class="bx bx-edit"></i>
+                                        <a href="{{ route('admin.kost.show', $kost) }}"
+                                            class="btn btn-sm btn-icon btn-info" data-bs-toggle="tooltip"
+                                            title="Detail">
+                                            <i class="bx bx-show"></i>
                                         </a>
+                                        {{-- <a href="{{ route('admin.kost.edit', $kost) }}"
+                                            class="btn btn-sm btn-icon btn-warning" data-bs-toggle="tooltip"
+                                            title="Edit">
+                                            <i class="bx bx-edit"></i>
+                                        </a> --}}
                                         <!-- <form action="{{ route('admin.kost.destroy', $kost) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus kost ini?')">
                                             @csrf
                                             @method('DELETE')

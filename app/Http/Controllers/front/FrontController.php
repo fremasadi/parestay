@@ -14,21 +14,9 @@ class FrontController extends Controller
         $query = Kost::with([
             'reviews',
             'pemilik',
-            'kamars' => function ($q) {
-                $q->where('status', 'tersedia');
-            },
+            'kamars',
         ])
-            ->withMin(
-                [
-                    'kamars as kamars_min_harga' => function ($q) {
-                        $q->where('status', 'tersedia');
-                    },
-                ],
-                'harga',
-            )
-            ->whereHas('kamars', function ($q) {
-                $q->where('status', 'tersedia');
-            });
+            ->withMin('kamars as kamars_min_harga', 'harga');
 
         // ✅ Filter jenis kost
         if ($request->filled('jenis_kost') && $request->jenis_kost !== 'semua') {
@@ -170,7 +158,7 @@ class FrontController extends Controller
 
     public function show($id)
     {
-        $kost = Kost::with(['reviews.reviewer', 'pemilik.user'])->findOrFail($id);
+        $kost = Kost::with(['reviews.reviewer', 'pemilik.user', 'kamars'])->findOrFail($id);
         return view('front.kost-detail', compact('kost'));
     }
 }

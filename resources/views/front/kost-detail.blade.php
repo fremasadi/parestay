@@ -19,26 +19,71 @@
             </div>
         @endif
 
-        <!-- 🖼️ GALLERY -->
+        <!-- 🖼️ GALLERY SLIDER (2 gambar per slide) -->
         <div class="mb-8">
             @if (!empty($kost->images) && count($kost->images) > 0)
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <img src="{{ asset('storage/' . $kost->images[0]) }}"
-                             class="w-full h-96 object-cover rounded-xl cursor-pointer"
-                             onclick="openViewer(0)">
-                    </div>  
+                @php $imageChunks = array_chunk($kost->images, 2); @endphp
 
-                    @if(count($kost->images) > 1)
-                    <div class="grid grid-cols-2 gap-4">
-                        @foreach(array_slice($kost->images, 1, 4) as $i => $image)
-                            <img src="{{ asset('storage/' . $image) }}"
-                                 class="w-full h-44 object-cover rounded-xl cursor-pointer"
-                                 onclick="openViewer({{ $i + 1 }})">
+                <div class="relative w-full overflow-hidden rounded-xl" id="gallerySlider">
+
+                    <!-- Slides -->
+                    <div class="flex transition-transform duration-300 ease-in-out" id="sliderTrack">
+                        @foreach ($imageChunks as $chunkIndex => $chunk)
+                            <div class="min-w-full flex gap-2 bg-gray-100" style="height: 420px;">
+                                @foreach ($chunk as $imgInChunk => $image)
+                                    @php $globalIndex = $chunkIndex * 2 + $imgInChunk; @endphp
+                                    <div class="{{ count($chunk) === 1 ? 'w-full' : 'w-1/2' }} h-full overflow-hidden rounded-lg">
+                                        <img src="{{ asset('storage/' . $image) }}"
+                                            class="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                                            onclick="openViewer({{ $globalIndex }})">
+                                    </div>
+                                @endforeach
+                            </div>
                         @endforeach
                     </div>
+
+                    @if (count($imageChunks) > 1)
+                        <!-- Prev Button -->
+                        <button onclick="slidePrev()"
+                            class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl transition-colors z-10">
+                            ‹
+                        </button>
+
+                        <!-- Next Button -->
+                        <button onclick="slideNext()"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl transition-colors z-10">
+                            ›
+                        </button>
+
+                        <!-- Dots -->
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2" id="sliderDots">
+                            @foreach ($imageChunks as $i => $chunk)
+                                <button onclick="goToSlide({{ $i }})"
+                                    class="w-2.5 h-2.5 rounded-full transition-colors {{ $i === 0 ? 'bg-white' : 'bg-white/50' }}"
+                                    data-dot="{{ $i }}"></button>
+                            @endforeach
+                        </div>
+
+                        <!-- Counter -->
+                        <div class="absolute top-3 right-3 bg-black/50 text-white text-xs px-3 py-1 rounded-full"
+                            id="sliderCounter">
+                            1 / {{ count($imageChunks) }}
+                        </div>
                     @endif
+
                 </div>
+
+                <!-- Thumbnail Strip -->
+                @if (count($kost->images) > 2)
+                    <div class="flex gap-2 mt-3 overflow-x-auto pb-1" id="thumbnailStrip">
+                        @foreach ($kost->images as $i => $image)
+                            <img src="{{ asset('storage/' . $image) }}"
+                                class="w-20 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 border-2 transition-colors {{ $i < 2 ? 'border-teal-500' : 'border-transparent' }}"
+                                data-thumb="{{ $i }}" onclick="goToSlide({{ floor($i / 2) }})">
+                        @endforeach
+                    </div>
+                @endif
+
             @else
                 <div class="bg-gray-200 h-96 rounded-xl flex items-center justify-center">
                     <span class="text-gray-500">Tidak ada gambar tersedia</span>
@@ -89,18 +134,25 @@
                 <div class="bg-white rounded-xl shadow-md p-6">
                     <h2 class="text-xl font-bold mb-4">Pilih Jenis Kamar</h2>
 
-                    @if ($kost->kamars()->where('status', 'tersedia')->count() > 0)
+                    @if ($kost->kamars->count() > 0)
                         <div class="space-y-4">
-                            @foreach ($kost->kamars()->where('status', 'tersedia')->get() as $kamar)
-                                <div class="border border-gray-200 rounded-lg p-4 hover:border-teal-500 transition-colors cursor-pointer group"
+                            @foreach ($kost->kamars as $kamar)
+                                @php $tersedia = $kamar->status === 'tersedia'; @endphp
+                                <div class="border {{ $tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-gray-100 opacity-70' }} rounded-lg p-4 transition-colors cursor-pointer group"
                                     onclick="selectRoom({{ $kamar->id }})">
                                     <div class="flex justify-between items-start">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3 mb-2">
                                                 <h3 class="text-lg font-semibold">Kamar {{ $kamar->nomor_kamar }}</h3>
-                                                <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                                                    Tersedia
-                                                </span>
+                                                @if ($tersedia)
+                                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                                        Tersedia
+                                                    </span>
+                                                @else
+                                                    <span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
+                                                        Tidak Tersedia
+                                                    </span>
+                                                @endif
                                             </div>
 
                                             @if ($kamar->luas_kamar)
@@ -141,24 +193,31 @@
                                             </div>
                                             <div class="text-sm text-gray-500">/{{ $kamar->type_harga }}</div>
 
-                                            @auth
-                                                @if ($kost->terverifikasi)
-                                                    <button type="button" onclick="bookRoom({{ $kamar->id }})"
-                                                        class="mt-3 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
-                                                        Pilih Kamar
-                                                    </button>
+                                            @if ($tersedia)
+                                                @auth
+                                                    @if ($kost->terverifikasi)
+                                                        <button type="button" onclick="bookRoom({{ $kamar->id }})"
+                                                            class="mt-3 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
+                                                            Pilih Kamar
+                                                        </button>
+                                                    @else
+                                                        <button disabled
+                                                            class="mt-3 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm cursor-not-allowed">
+                                                            Belum Terverifikasi
+                                                        </button>
+                                                    @endif
                                                 @else
-                                                    <button disabled
-                                                        class="mt-3 px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm cursor-not-allowed">
-                                                        Belum Terverifikasi
-                                                    </button>
-                                                @endif
+                                                    <a href="{{ route('login') }}"
+                                                        class="mt-3 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
+                                                        Login untuk Booking
+                                                    </a>
+                                                @endauth
                                             @else
-                                                <a href="{{ route('login') }}"
-                                                    class="mt-3 inline-block px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-semibold hover:bg-teal-700 transition-colors">
-                                                    Login untuk Booking
-                                                </a>
-                                            @endauth
+                                                <button disabled
+                                                    class="mt-3 px-4 py-2 bg-gray-200 text-gray-400 rounded-lg text-sm cursor-not-allowed">
+                                                    Tidak Tersedia
+                                                </button>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -339,6 +398,61 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === "Escape") closeViewer();
         });
+    </script>
+
+    <script>
+        // Gallery Slider
+        let sliderIndex = 0;
+        const totalSlides = document.querySelectorAll('#sliderTrack > div').length;
+
+        function updateSlider() {
+            document.getElementById('sliderTrack').style.transform = `translateX(-${sliderIndex * 100}%)`;
+
+            document.querySelectorAll('[data-dot]').forEach(dot => {
+                const idx = parseInt(dot.dataset.dot);
+                dot.className =
+                    `w-2.5 h-2.5 rounded-full transition-colors ${idx === sliderIndex ? 'bg-white' : 'bg-white/50'}`;
+            });
+
+            // Thumbnail: aktif jika gambar ada di chunk yang sedang ditampilkan
+            document.querySelectorAll('[data-thumb]').forEach(thumb => {
+                const idx = parseInt(thumb.dataset.thumb);
+                const chunkIdx = Math.floor(idx / 2);
+                thumb.className =
+                    `w-20 h-16 object-cover rounded-lg cursor-pointer flex-shrink-0 border-2 transition-colors ${chunkIdx === sliderIndex ? 'border-teal-500' : 'border-transparent'}`;
+            });
+
+            const counter = document.getElementById('sliderCounter');
+            if (counter) counter.textContent = `${sliderIndex + 1} / ${totalSlides}`;
+        }
+
+        function slideNext() {
+            sliderIndex = (sliderIndex + 1) % totalSlides;
+            updateSlider();
+        }
+
+        function slidePrev() {
+            sliderIndex = (sliderIndex - 1 + totalSlides) % totalSlides;
+            updateSlider();
+        }
+
+        function goToSlide(index) {
+            sliderIndex = index;
+            updateSlider();
+        }
+
+        // Swipe support
+        let touchStartX = 0;
+        const sliderEl = document.getElementById('gallerySlider');
+        if (sliderEl) {
+            sliderEl.addEventListener('touchstart', e => {
+                touchStartX = e.touches[0].clientX;
+            });
+            sliderEl.addEventListener('touchend', e => {
+                const diff = touchStartX - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 50) diff > 0 ? slideNext() : slidePrev();
+            });
+        }
     </script>
 
     <script>

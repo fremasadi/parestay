@@ -4,8 +4,9 @@
         <label class="form-label">Pemilik Kost</label>
         <select name="owner_id" class="form-select" required>
             <option value="">-- Pilih Pemilik --</option>
-            @foreach($pemiliks as $pemilik)
-                <option value="{{ $pemilik->id }}" {{ old('owner_id', $kost->owner_id ?? '') == $pemilik->id ? 'selected' : '' }}>
+            @foreach ($pemiliks as $pemilik)
+                <option value="{{ $pemilik->id }}"
+                    {{ old('owner_id', $kost->owner_id ?? '') == $pemilik->id ? 'selected' : '' }}>
                     {{ $pemilik->user->name }}
                 </option>
             @endforeach
@@ -34,8 +35,7 @@
     <div class="row mb-3">
         <div class="col-12">
             <label for="alamat" class="form-label fw-semibold">Alamat</label>
-            <input type="text" name="alamat" id="alamat"
-                value="{{ old('alamat', $kost->alamat ?? '') }}"
+            <input type="text" name="alamat" id="alamat" value="{{ old('alamat', $kost->alamat ?? '') }}"
                 class="form-control" placeholder="Masukkan alamat lengkap" required>
         </div>
     </div>
@@ -45,42 +45,34 @@
     @include('components.maps-picker', [
         'latitude' => $kost->latitude ?? null,
         'longitude' => $kost->longitude ?? null,
-        'mapId' => 'kost-create'
+        'mapId' => 'kost-create',
     ])
-     {{-- Fasilitas
+    {{-- Fasilitas
     @include('components.fasilitas-picker', [
         'fasilitas' => $kost->fasilitas ?? []
     ]) --}}
 
     {{-- Peraturan JSON --}}
     @include('components.peraturan-picker', [
-    'peraturan' => $kost->peraturan ?? []
+        'peraturan' => $kost->peraturan ?? [],
     ])
 
     <div class="row g-3 align-items-end">
-    {{-- Jenis Kost --}}
-    <div class="col-md-3">
-        <label class="form-label">Jenis Kost</label>
-        <select name="jenis_kost" class="form-select" required>
-            @foreach(['putra', 'putri', 'bebas'] as $jenis)
-                <option value="{{ $jenis }}" {{ old('jenis_kost', $kost->jenis_kost ?? 'bebas') == $jenis ? 'selected' : '' }}>
-                    {{ ucfirst($jenis) }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-
-    {{-- Verifikasi --}}
-    <div class="col-md-3 d-flex align-items-center">
-        <div class="form-check mt-3">
-            <input type="checkbox" name="terverifikasi" value="1"
-                class="form-check-input"
-                id="terverifikasi"
-                {{ old('terverifikasi', $kost->terverifikasi ?? false) ? 'checked' : '' }}>
-            <label for="terverifikasi" class="form-check-label">Terverifikasi</label>
+        {{-- Jenis Kost --}}
+        <div class="col-md-3">
+            <label class="form-label">Jenis Kost</label>
+            <select name="jenis_kost" class="form-select" required>
+                @foreach (['putra', 'putri', 'bebas'] as $jenis)
+                    <option value="{{ $jenis }}"
+                        {{ old('jenis_kost', $kost->jenis_kost ?? 'bebas') == $jenis ? 'selected' : '' }}>
+                        {{ ucfirst($jenis) }}
+                    </option>
+                @endforeach
+            </select>
         </div>
-    </div>
 
-</div>
+
+
+    </div>
 
 </div>
