@@ -77,6 +77,13 @@
             </a>
         </li>
 
+        <li class="menu-item {{ request()->routeIs('admin.penarikan.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.penarikan.index') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                <div>Penarikan Dana</div>
+            </a>
+        </li>
+
         {{-- <li class="menu-item disabled">
             <a href="#" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-money"></i>

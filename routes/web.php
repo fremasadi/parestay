@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\PembayaranController as AdminPembayaranController;
 use App\Http\Controllers\Admin\KursusController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\PenarikanDanaController as AdminPenarikanDanaController;
 
 // Pemilik Controllers
 use App\Http\Controllers\Pemilik\KostController as PemilikKostController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Pemilik\BookingController as PemilikBookingController;
 use App\Http\Controllers\Pemilik\PembayaranController as PemilikPembayaranController;
 use App\Http\Controllers\Pemilik\ReviewController as PemilikReviewController;
 use App\Http\Controllers\Pemilik\KamarController as PemilikKamarController;
+use App\Http\Controllers\Pemilik\LaporanPendapatanController as PemilikLaporanController;
 
 // Front / Public Controllers
 use App\Http\Controllers\Front\FrontController;
@@ -69,6 +71,10 @@ Route::middleware(['auth', 'role:admin'])
         Route::resource('booking', AdminBookingController::class); // admin.booking.*
         Route::get('pembayaran', [AdminPembayaranController::class, 'index'])->name('pembayaran.index');
 
+        // Penarikan Dana Admin
+        Route::get('penarikan', [AdminPenarikanDanaController::class, 'index'])->name('penarikan.index');
+        Route::patch('penarikan/{penarikan}', [AdminPenarikanDanaController::class, 'updateStatus'])->name('penarikan.update');
+
         // Kursus Admin
         Route::resource('kursus', KursusController::class)->parameters([
             'kursus' => 'kursus',
@@ -97,6 +103,10 @@ Route::middleware(['auth', 'role:pemilik'])
         // Booking & Pembayaran Pemilik
         Route::get('/booking', [PemilikBookingController::class, 'index'])->name('booking.index');
         Route::get('/pembayaran', [PemilikPembayaranController::class, 'index'])->name('pembayaran.index');
+
+        // Laporan Pendapatan & Penarikan Dana Pemilik
+        Route::get('/laporan', [PemilikLaporanController::class, 'index'])->name('laporan.index');
+        Route::post('/laporan/ajukan', [PemilikLaporanController::class, 'ajukanPenarikan'])->name('laporan.ajukan');
     });
 
 /*

@@ -51,16 +51,15 @@
             </a>
         </li>
 
-        {{-- Menu Header - Laporan (Coming Soon) --}}
-        {{-- <li class="menu-header small text-uppercase">
+        {{-- Menu Header - Laporan --}}
+        <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Laporan & Review</span>
         </li>
 
-        <li class="menu-item disabled">
-            <a href="#" class="menu-link">
+        <li class="menu-item {{ request()->routeIs('pemilik.laporan.*') ? 'active' : '' }}">
+            <a href="{{ route('pemilik.laporan.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bar-chart"></i>
-                <div>Laporan Pendapatan <span
-                        class="badge badge-center rounded-pill bg-label-secondary ms-2">Soon</span></div>
+                <div>Laporan Pendapatan</div>
             </a>
         </li>
 
@@ -69,7 +68,7 @@
                 <i class="menu-icon tf-icons bx bx-star"></i>
                 <div>Review Kost</div>
             </a>
-        </li> --}}
+        </li>
 
     </ul>
 </aside>
