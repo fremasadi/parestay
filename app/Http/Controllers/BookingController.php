@@ -43,7 +43,15 @@ class BookingController extends Controller
             'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
         ]);
 
-        if ($kamar->status !== 'tersedia') {
+        $hasActiveBooking = false;
+        if (auth()->check()) {
+            $hasActiveBooking = Booking::where('kamar_id', $kamar->id)
+                ->where('user_id', auth()->id())
+                ->where('status', 'aktif')
+                ->exists();
+        }
+
+        if ($kamar->status !== 'tersedia' && !$hasActiveBooking) {
             return redirect()->back()->with('error', 'Kamar tidak tersedia');
         }
 
@@ -85,8 +93,13 @@ class BookingController extends Controller
 
         $kamar = Kamar::with('kost')->findOrFail($request->kamar_id);
 
+        $hasActiveBooking = Booking::where('kamar_id', $kamar->id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'aktif')
+            ->exists();
+
         // Validasi ulang
-        if ($kamar->status !== 'tersedia') {
+        if ($kamar->status !== 'tersedia' && !$hasActiveBooking) {
             return back()->with('error', 'Maaf, kamar tidak tersedia')->withInput();
         }
 

@@ -168,7 +168,7 @@
                 </table>
             </div>
             @if($penarikanList->hasPages())
-                <div class="mt-3">{{ $penarikanList->links() }}</div>
+                <div class="mt-3">{{ $penarikanList->links('pagination::bootstrap-5') }}</div>
             @endif
         </div>
     </div>
@@ -244,7 +244,7 @@
                 </table>
             </div>
             @if($pembayarans->hasPages())
-                <div class="mt-3">{{ $pembayarans->links() }}</div>
+                <div class="mt-3">{{ $pembayarans->links('pagination::bootstrap-5') }}</div>
             @endif
         </div>
     </div>

@@ -96,7 +96,7 @@
 
             @if($reviews->hasPages())
                 <div class="mt-4">
-                    {{ $reviews->links() }}
+                    {{ $reviews->links('pagination::bootstrap-5') }}
                 </div>
             @endif
         </div>

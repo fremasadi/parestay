@@ -12,7 +12,7 @@ class PenyewaController extends Controller
 {
     public function index()
     {
-        $penyewas = Penyewa::with('user')->get();
+        $penyewas = Penyewa::with('user')->paginate(10);
         return view('admin.penyewa.index', compact('penyewas'));
     }
 

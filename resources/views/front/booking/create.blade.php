@@ -64,7 +64,7 @@
 
 
                 <!-- Data Diri -->
-                <div>
+                {{-- <div>
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-gray-800">Data Penyewa</h3>
                     </div>
@@ -92,7 +92,7 @@
                         </div>
 
                         <!-- Foto KTP -->
-                        {{-- <div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Foto KTP <span class="text-red-500">*</span>
                             </label>
@@ -109,7 +109,7 @@
                             @error('foto_ktp')
                                 <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                             @enderror
-                        </div> --}}
+                        </div>
 
                         <!-- Nomor HP -->
                         <div>
@@ -162,11 +162,11 @@
                                 {{ $penyewa->alamat }}
                             </p>
                         @else
-                            <input type="text" name="alamat" value="{{ old('alamat', $penyewa->alamat ?? '') }}">
-                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#5F9EA0]">
+                            <input type="text" name="alamat" value="{{ old('alamat', $penyewa->alamat ?? '') }}"
+                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#5F9EA0]">
                         @endif
                     </div>
-                </div>
+                </div> --}}
 
                 <!-- Detail Booking -->
                 <!-- Detail Booking -->

@@ -351,6 +351,48 @@
             </button>
         </div>
     </main>
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script>
+        const isLoggedIn = @json(auth()->check());
+        const userRole = @json(auth()->check() ? auth()->user()->role : null);
+        const isPenyewaLengkap = @json(auth()->check() && auth()->user()->role === 'penyewa' && auth()->user()->penyewa && auth()->user()->penyewa->no_hp ? true : false);
+        const profileEditUrl = "{{ route('profile.edit') }}";
+
+        function selectRoom(kamarId) {
+            // Highlight selected room
+            document.querySelectorAll('.border-gray-200').forEach(el => {
+                el.classList.remove('border-teal-500', 'bg-teal-50');
+                el.classList.add('border-gray-100');
+            });
+            event.currentTarget.classList.remove('border-gray-100', 'opacity-70');
+            event.currentTarget.classList.add('border-teal-500', 'bg-teal-50');
+        }
+
+        function bookRoom(kamarId) {
+            // Cek kelengkapan data penyewa
+            if (isLoggedIn && userRole === 'penyewa' && !isPenyewaLengkap) {
+                Swal.fire({
+                    title: 'Profil Belum Lengkap!',
+                    text: "Data identitas Anda belum lengkap. Silakan lengkapi profil Anda terlebih dahulu untuk dapat melanjutkan proses penyewaan kamar.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d9488',
+                    cancelButtonColor: '#9ca3af',
+                    confirmButtonText: 'Lengkapi Sekarang',
+                    cancelButtonText: 'Nanti Saja'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = profileEditUrl;
+                    }
+                });
+                return;
+            }
+
+            // Redirect to booking page with kamar_id if all good
+            window.location.href = `/booking/create?kamar_id=${kamarId}`;
+        }
+    </script>
     <script>
         const images = @json(array_map(fn($img) => asset('storage/' . $img), $kost->images ?? []));
         let currentIndex = 0;
@@ -454,20 +496,5 @@
             });
         }
     </script>
-
-    <script>
-        function selectRoom(kamarId) {
-            // Highlight selected room
-            document.querySelectorAll('.border-gray-200').forEach(el => {
-                el.classList.remove('border-teal-500', 'bg-teal-50');
-            });
-            event.currentTarget.classList.add('border-teal-500', 'bg-teal-50');
-        }
-
-        function bookRoom(kamarId) {
-            // Redirect to booking page with kamar_id
-            window.location.href = `/booking/create?kamar_id=${kamarId}`;
-        }
-    </script>
-
+    @endpush
 @endsection

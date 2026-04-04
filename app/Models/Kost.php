@@ -14,13 +14,12 @@ class Kost extends Model
 
     protected $table = 'kosts';
 
-    protected $fillable = ['owner_id', 'nama', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost', 'peraturan', 'images', 'terverifikasi'];
+    protected $fillable = ['owner_id', 'nama', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost', 'peraturan', 'images'];
 
     protected $casts = [
         'fasilitas' => JsonStringArray::class,
         'peraturan' => JsonStringArray::class,
         'images' => JsonArray::class,
-        'terverifikasi' => 'boolean',
         'harga' => 'decimal:0',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
@@ -76,7 +75,12 @@ class Kost extends Model
     }
 
     public function kamarTermurah()
-{
-    return $this->hasOne(Kamar::class)->orderBy('harga', 'asc');
-}
+    {
+        return $this->hasOne(Kamar::class)->orderBy('harga', 'asc');
+    }
+
+    public function getTerverifikasiAttribute()
+    {
+        return $this->pemilik && $this->pemilik->user && $this->pemilik->user->status === 'aktif';
+    }
 }

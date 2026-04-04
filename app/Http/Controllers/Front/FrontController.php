@@ -11,11 +11,19 @@ class FrontController extends Controller
 {
     public function landing(Request $request)
     {
+        $globalKostsCount = Kost::count();
+        $globalVerifiedCount = Kost::whereHas('pemilik.user', function ($q) {
+            $q->where('status', 'aktif');
+        })->count();
+
         $query = Kost::with([
             'reviews',
-            'pemilik',
+            'pemilik.user',
             'kamars',
         ])
+            ->whereHas('pemilik.user', function ($q) {
+                $q->where('status', 'aktif');
+            })
             ->withMin('kamars as kamars_min_harga', 'harga');
 
         // ✅ Filter jenis kost
@@ -63,11 +71,13 @@ class FrontController extends Controller
             $query->orderBy('kamars_min_harga', 'asc');
         }
 
-        $kosts = $query->get()->map(function ($kost) {
+        $paginator = $query->paginate(6)->withQueryString();
+        $paginator->getCollection()->transform(function ($kost) {
             $kost->jarak_km = isset($kost->jarak) ? round($kost->jarak, 2) : null;
-
             return $kost;
         });
+        
+        $kosts = $paginator;
 
         if ($request->ajax()) {
             return response()->json([
@@ -75,7 +85,7 @@ class FrontController extends Controller
             ]);
         }
 
-        return view('front.landing', compact('kosts'));
+        return view('front.landing', compact('kosts', 'globalKostsCount', 'globalVerifiedCount'));
     }
 
     public function search(Request $request)

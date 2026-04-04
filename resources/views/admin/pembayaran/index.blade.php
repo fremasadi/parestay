@@ -77,7 +77,7 @@
 
             @if($pembayarans->hasPages())
                 <div class="mt-4">
-                    {{ $pembayarans->links() }}
+                    {{ $pembayarans->links('pagination::bootstrap-5') }}
                 </div>
             @endif
         </div>

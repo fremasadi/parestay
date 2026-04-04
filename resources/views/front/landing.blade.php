@@ -35,12 +35,12 @@
 
                     <div class="flex space-x-8 mt-12">
                         <div>
-                            <h3 class="text-3xl font-bold text-gray-800">{{ $kosts->count() }}+</h3>
+                            <h3 class="text-3xl font-bold text-gray-800">{{ $globalKostsCount }}+</h3>
                             <p class="text-gray-600">Kost Tersedia</p>
                         </div>
                         <div>
                             <h3 class="text-3xl font-bold text-gray-800">
-                                {{ $kosts->where('terverifikasi', true)->count() }}+</h3>
+                                {{ $globalVerifiedCount }}+</h3>
                             <p class="text-gray-600">Terverifikasi</p>
                         </div>
                         <div>
@@ -135,7 +135,9 @@
             </div>
 
             <div id="kostContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                @include('layouts.partials.kost-cards', ['kosts' => $kosts->take(6)])
+                @include('layouts.partials.kost-cards', [
+                    'kosts' => $kosts
+                ])
             </div>
         </div>
     </section>
@@ -330,6 +332,43 @@
                         console.error('Error:', error);
                         kostContainer.innerHTML =
                             '<div class="col-span-full text-center py-12 text-red-500"><i class="fas fa-exclamation-circle text-4xl mb-4"></i><p>Terjadi kesalahan. Silakan coba lagi.</p></div>';
+                    });
+            });
+
+            // ➡️ AJAX Pagination Handler
+            kostContainer.addEventListener('click', function(e) {
+                const link = e.target.closest('nav[role="navigation"] a');
+                if (!link) return;
+
+                e.preventDefault();
+                const url = new URL(link.href);
+                const params = new URLSearchParams(url.search);
+
+                kostContainer.innerHTML =
+                    '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-teal-500"></i><p class="mt-4 text-gray-600">Memuat halaman...</p></div>';
+
+                fetch('{{ route('landing') }}?' + params.toString(), {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        kostContainer.innerHTML = data.html;
+                        loadKostsToMap();
+                        document.getElementById('kost').scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+
+                        const newUrl = new URL(window.location);
+                        newUrl.search = params.toString();
+                        window.history.pushState({}, '', newUrl);
+                    })
+                    .catch(error => {
+                        console.error('Error pagination:', error);
                     });
             });
 

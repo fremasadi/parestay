@@ -16,8 +16,7 @@ class KamarController extends Controller
             ->whereHas('kost', function ($query) {
                 $query->where('owner_id', auth()->user()->pemilik->id);
             })
-            ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('pemilik.kamar.index', compact('kamars'));
     }

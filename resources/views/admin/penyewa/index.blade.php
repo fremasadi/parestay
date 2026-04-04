@@ -72,6 +72,10 @@
                     </tbody>
                 </table>
             </div>
+            <div class="mt-4">
+                {{ $penyewas->links('pagination::bootstrap-5') }}
+            </div>
         </div>
+    
     </div>
 </x-app-layout>

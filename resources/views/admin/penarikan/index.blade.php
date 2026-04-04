@@ -136,7 +136,7 @@
             </div>
 
             @if($penarikanList->hasPages())
-                <div class="mt-3">{{ $penarikanList->links() }}</div>
+                <div class="mt-3">{{ $penarikanList->links('pagination::bootstrap-5') }}</div>
             @endif
         </div>
     </div>

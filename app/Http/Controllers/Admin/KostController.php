@@ -34,7 +34,6 @@ class KostController extends Controller
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'terverifikasi' => 'nullable|boolean',
         ]);
 
         $data = $request->only([
@@ -43,7 +42,6 @@ class KostController extends Controller
         ]);
 
         $data['peraturan'] = $request->peraturan ?: '[]';
-        $data['terverifikasi'] = $request->has('terverifikasi');
 
         // Upload gambar
         $imagePaths = [];
@@ -86,7 +84,6 @@ class KostController extends Controller
             'delete_images' => 'nullable|array',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'terverifikasi' => 'nullable|boolean',
         ]);
 
         $data = $request->only([
@@ -96,7 +93,6 @@ class KostController extends Controller
         ]);
 
         $data['peraturan'] = $request->peraturan ?: '[]';
-        $data['terverifikasi'] = $request->has('terverifikasi');
 
         // Gambar lama
         $existingImages = $kost->images ?? [];

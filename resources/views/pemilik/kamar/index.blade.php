@@ -46,5 +46,8 @@
                 </tbody>
             </table>
         </div>
+        <div class="mt-3 px-4">
+            {{ $kamars->links('pagination::bootstrap-5') }}
+        </div>
     </div>
 </x-app-layout>

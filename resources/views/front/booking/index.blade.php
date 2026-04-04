@@ -118,6 +118,21 @@
                                 </button>
                             </form>
                             @endif
+
+                            @php
+                                $now = \Carbon\Carbon::now();
+                                $end_date = \Carbon\Carbon::parse($booking->tanggal_selesai);
+                                $diffDays = $now->diffInDays($end_date, false);
+                                // Muncul ketika H-1 sblm selesai (diffDays <= 1)
+                                $isEligibleToExtend = $booking->status === 'aktif' && $diffDays <= 1;
+                            @endphp
+
+                            @if($isEligibleToExtend && $booking->kamar_id)
+                            <a href="{{ url('/booking/create?kamar_id=' . $booking->kamar_id) }}"
+                               class="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded-lg font-semibold hover:bg-blue-700 transition">
+                                Perpanjang
+                            </a>
+                            @endif
                         </div>
                     </div>
                 </div>

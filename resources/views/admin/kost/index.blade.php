@@ -71,7 +71,7 @@
                 </table>
             </div>
 
-            <div class="mt-3">{{ $kosts->links() }}</div>
+            <div class="mt-3">{{ $kosts->links('pagination::bootstrap-5') }}</div>
         </div>
     </div>
 </x-app-layout>

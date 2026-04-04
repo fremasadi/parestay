@@ -105,7 +105,7 @@
 
             {{-- Pagination --}}
             <div class="mt-3">
-                {{ $pemiliks->links() }}
+                {{ $pemiliks->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>

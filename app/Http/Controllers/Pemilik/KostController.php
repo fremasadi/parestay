@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Kost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class KostController extends Controller
 {
@@ -45,7 +46,6 @@ class KostController extends Controller
 
         $data['owner_id'] = $pemilikId;
         $data['peraturan'] = $request->peraturan ?: '[]';
-        $data['terverifikasi'] = false;
         // Upload gambar
         $imagePaths = [];
         if ($request->hasFile('images')) {
@@ -85,7 +85,6 @@ class KostController extends Controller
         $data = $request->only(['nama', 'type_harga', 'alamat', 'latitude', 'longitude', 'jenis_kost']);
 
         $data['peraturan'] = $request->peraturan ?: '[]';
-        $data['terverifikasi'] = $request->has('terverifikasi');
 
         // Gambar lama
         $existingImages = $kost->images ?? [];

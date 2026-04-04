@@ -26,7 +26,6 @@ class KostSeeder extends Seeder
                 'total_slot' => 10,
                 'slot_tersedia' => 3,
                 'status' => 'tersedia',
-                'terverifikasi' => true,
             ],
             [
                 'nama' => 'Kost Melati Indah',
@@ -40,7 +39,6 @@ class KostSeeder extends Seeder
                 'total_slot' => 15,
                 'slot_tersedia' => 7,
                 'status' => 'tersedia',
-                'terverifikasi' => true,
             ],
             // ... (kost lain tetap sama)
         ];

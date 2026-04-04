@@ -94,3 +94,9 @@
         <p class="text-gray-500 text-lg">Tidak ada kost ditemukan.</p>
     </div>
 @endforelse
+
+@if($kosts instanceof \Illuminate\Pagination\LengthAwarePaginator && $kosts->hasPages())
+    <div class="col-span-1 md:col-span-2 lg:col-span-3 mt-8 flex justify-center">
+        {{ $kosts->links() }}
+    </div>
+@endif
