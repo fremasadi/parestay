@@ -3,12 +3,15 @@
 @section('title', 'Parestay - Temukan Kost Impianmu')
 
 @push('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* InfoBox custom styling for Google Maps padding */
+        .gm-style .gm-style-iw-c { padding: 0 !important; border-radius: 0.5rem; overflow: hidden; }
+        .gm-style .gm-style-iw-d { overflow: hidden !important; }
+    </style>
 @endpush
 
 @section('extra-styles')
     #map { height: 500px; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    .leaflet-popup-content-wrapper { border-radius: 0.5rem; }
 @endsection
 
 @section('content')
@@ -147,7 +150,7 @@
         <div class="container mx-auto px-6">
             <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-gray-800 mb-4">Peta Lokasi Kost</h2>
-                <p class="text-gray-600 text-lg">Lokasi kost di sekitar Kampung Inggris</p>
+                <p class="text-gray-600 text-lg">Lokasi kost di sekitar Kampung Inggris Pare, Kediri</p>
             </div>
 
             <div id="map" class="rounded-xl shadow" style="height: 500px;"></div>
@@ -194,20 +197,32 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {{-- Google Maps API: The callback specifies the initMap function --}}
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMap&loading=async"></script>
     <script>
-        let map, markers = [];
+        let map;
+        let markers = [];
+        let infoWindow;
 
-        // 🗺️ Inisialisasi Peta
-        function initMap() {
-            const defaultLat = -7.752361;
-            const defaultLng = 112.201167;
+        // 🗺️ Inisialisasi Peta (Google Maps)
+        window.initMap = function() {
+            // Koordinat Kampung Inggris Pare, Kediri
+            const pareLocation = { lat: -7.760074, lng: 112.180252 };
 
-            map = L.map('map').setView([defaultLat, defaultLng], 13);
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: pareLocation,
+                zoom: 14,
+                mapTypeId: 'roadmap',
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
+            infoWindow = new google.maps.InfoWindow();
 
             loadKostsToMap();
         }
@@ -221,6 +236,7 @@
                 return harga.toString();
             }
         }
+
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 const targetId = this.getAttribute('href').substring(1);
@@ -236,47 +252,61 @@
             });
         });
 
-
         // 🏠 Ambil & tampilkan kost di peta
         function loadKostsToMap() {
+            if (!map) return; // Guard clause if map is not loaded yet
+
             const formData = new FormData(document.getElementById('searchForm'));
             const params = new URLSearchParams(formData);
 
             fetch('{{ route('api.kosts') }}?' + params.toString())
                 .then(res => res.json())
                 .then(kosts => {
-                    markers.forEach(m => map.removeLayer(m));
+                    // Hapus semua marker yang ada
+                    markers.forEach(m => m.setMap(null));
                     markers = [];
 
                     kosts.forEach(kost => {
                         if (kost.latitude && kost.longitude) {
-                            const icon = L.divIcon({
-                                html: `<div style="background: ${kost.terverifikasi ? '#10b981' : '#5F9EA0'}; color: white; padding: 8px 12px; border-radius: 8px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-                            Rp ${formatHarga(kost.harga)}
-                        </div>`,
-                                className: '',
-                                iconSize: [80, 40],
-                                iconAnchor: [40, 40]
+                            const markerColor = kost.terverifikasi ? '#10b981' : '#5F9EA0';
+
+                            // Marker dengan harga tercetak
+                            const marker = new google.maps.Marker({
+                                position: { lat: parseFloat(kost.latitude), lng: parseFloat(kost.longitude) },
+                                map: map,
+                                title: kost.nama,
+                                label: {
+                                    text: 'Rp ' + formatHarga(kost.harga),
+                                    color: 'white',
+                                    fontSize: '11px',
+                                    fontWeight: 'bold',
+                                    className: 'map-label'
+                                },
+                                icon: {
+                                    path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+                                    fillColor: markerColor,
+                                    fillOpacity: 1,
+                                    strokeColor: '#ffffff',
+                                    strokeWeight: 2,
+                                    scale: 1,
+                                    labelOrigin: new google.maps.Point(0, -28)
+                                }
                             });
 
-                            const marker = L.marker([kost.latitude, kost.longitude], {
-                                    icon
-                                })
-                                .addTo(map)
-                                .bindPopup(`
-                            <div class="p-2">
-                                <h3 class="font-bold text-lg mb-2">${kost.nama}</h3>
-                                <p class="text-sm text-gray-600 mb-2">${kost.alamat}</p>
-                                <p class="text-xl font-bold text-teal-600">Rp ${kost.harga.toLocaleString('id-ID')}/${kost.type_harga}</p>
-                                <p class="text-sm mt-2">${kost.slot_tersedia}/${kost.total_slot} kamar tersedia</p>
-                                <a href="/detail/${kost.id}"
-                                style="display:block; width:100%; text-align:center; padding:10px 16px; background:#14b8a6; color:white; font-weight:bold; font-size:1.1rem; border-radius:8px; text-decoration:none; box-shadow:0 4px 8px rgba(0,0,0,0.2); transition:all .2s;"
-                                onmouseover="this.style.background='#0d9488'; this.style.transform='scale(1.05)';"
-                                onmouseout="this.style.background='#14b8a6'; this.style.transform='scale(1)';">
-                                    Lihat Detail
-                                </a>
-                            </div>
-                        `);
+                            // Konten pop-up
+                            const popupContent = `
+                                <div style="padding: 12px; max-width: 200px; color: #333;">
+                                    <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">${kost.nama}</h3>
+                                    <p style="font-size: 13px; color: #666; margin-bottom: 8px;">${kost.alamat}</p>
+                                    <p style="font-size: 15px; font-weight: bold; color: #0d9488; margin-bottom: 8px;">Rp ${kost.harga.toLocaleString('id-ID')}/${kost.type_harga}</p>
+                                    <a href="/detail/${kost.id}" style="display: block; text-align: center; background-color: #14b8a6; color: white; padding: 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">Lihat Detail</a>
+                                </div>
+                            `;
+
+                            marker.addListener('click', () => {
+                                infoWindow.setContent(popupContent);
+                                infoWindow.open(map, marker);
+                            });
 
                             markers.push(marker);
                         }

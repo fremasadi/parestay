@@ -95,7 +95,15 @@ class FrontController extends Controller
 
     public function getKostsJson(Request $request)
     {
-        $query = Kost::with(['reviews', 'pemilik'])->where('tersedia');
+        $query = Kost::with([
+            'reviews',
+            'pemilik.user',
+            'kamars'
+        ])
+        ->whereHas('pemilik.user', function ($q) {
+            $q->where('status', 'aktif');
+        })
+        ->withMin('kamars as kamars_min_harga', 'harga');
 
         // ✅ PERBAIKAN: Gunakan variabel untuk tracking apakah ada filter kursus
         $hasKursusFilter = false;
@@ -153,7 +161,10 @@ class FrontController extends Controller
                 'alamat' => $kost->alamat,
                 'latitude' => (float) $kost->latitude,
                 'longitude' => (float) $kost->longitude,
-                'type_harga' => $kost->type_harga ?? 'bulanan',
+                'type_harga' => $kost->type_harga ?? 'bulanan', // fallback property
+                'harga' => (float) ($kost->kamars_min_harga ?? 0),
+                'slot_tersedia' => $kost->kamars->where('status', 'tersedia')->count(),
+                'total_slot' => $kost->kamars->count(),
                 'jenis_kost' => $kost->jenis_kost,
                 'terverifikasi' => (bool) $kost->terverifikasi,
                 'avg_rating' => round($kost->reviews()->avg('rating') ?? 0, 1),
