@@ -43,15 +43,12 @@ class BookingController extends Controller
             'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
         ]);
 
-        $hasActiveBooking = false;
-        if (auth()->check()) {
-            $hasActiveBooking = Booking::where('kamar_id', $kamar->id)
-                ->where('user_id', auth()->id())
-                ->where('status', 'aktif')
-                ->exists();
-        }
+        // Kamar tidak tersedia jika sudah ada booking aktif (sudah dibayar)
+        $kamarSudahDibayar = Booking::where('kamar_id', $kamar->id)
+            ->where('status', 'aktif')
+            ->exists();
 
-        if ($kamar->status !== 'tersedia' && !$hasActiveBooking) {
+        if ($kamarSudahDibayar || $kamar->status === 'dibooking') {
             return redirect()->back()->with('error', 'Kamar tidak tersedia');
         }
 
@@ -93,13 +90,12 @@ class BookingController extends Controller
 
         $kamar = Kamar::with('kost')->findOrFail($request->kamar_id);
 
-        $hasActiveBooking = Booking::where('kamar_id', $kamar->id)
-            ->where('user_id', auth()->id())
+        // Kamar tidak tersedia jika sudah ada booking aktif (sudah dibayar)
+        $kamarSudahDibayar = Booking::where('kamar_id', $kamar->id)
             ->where('status', 'aktif')
             ->exists();
 
-        // Validasi ulang
-        if ($kamar->status !== 'tersedia' && !$hasActiveBooking) {
+        if ($kamarSudahDibayar || $kamar->status === 'dibooking') {
             return back()->with('error', 'Maaf, kamar tidak tersedia')->withInput();
         }
 
@@ -147,8 +143,7 @@ class BookingController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Update status kamar
-            $kamar->update(['status' => 'dibooking']);
+            // Status kamar hanya diubah setelah pembayaran dikonfirmasi (di PaymentController)
 
             DB::commit();
 
