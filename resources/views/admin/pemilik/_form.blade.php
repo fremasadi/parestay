@@ -6,14 +6,14 @@
         <div class="mb-3">
             <label class="form-label">Nama</label>
             <input type="text" name="name" class="form-control" value="{{ old('name', $pemilik->user->name ?? '') }}"
-                required>
+                required disabled>
         </div>
 
         {{-- EMAIL --}}
         <div class="mb-3">
             <label class="form-label">Email</label>
             <input type="email" name="email" class="form-control"
-                value="{{ old('email', $pemilik->user->email ?? '') }}" required>
+                value="{{ old('email', $pemilik->user->email ?? '') }}" required disabled>
         </div>
 
         {{-- PASSWORD --}}
@@ -24,14 +24,14 @@
                     <small class="text-muted">(Kosongkan jika tidak ingin mengubah)</small>
                 @endif
             </label>
-            <input type="password" name="password" class="form-control" {{ isset($pemilik) ? '' : 'required' }}>
+            <input type="password" name="password" class="form-control" {{ isset($pemilik) ? '' : 'required' }} disabled>
         </div>
 
         {{-- KONFIRMASI PASSWORD --}}
         <div class="mb-3">
             <label class="form-label">Konfirmasi Password</label>
             <input type="password" name="password_confirmation" class="form-control"
-                {{ isset($pemilik) ? '' : 'required' }}>
+                {{ isset($pemilik) ? '' : 'required' }} disabled>
         </div>
     </div>
 
@@ -41,36 +41,36 @@
         <div class="mb-3">
             <label class="form-label">No. KTP</label>
             <input type="text" name="no_ktp" class="form-control"
-                value="{{ old('no_ktp', $pemilik->no_ktp ?? '') }}" required>
+                value="{{ old('no_ktp', $pemilik->no_ktp ?? '') }}" required disabled>
         </div>
 
         <div class="mb-3">
             <label class="form-label">No. HP</label>
             <input type="text" name="no_hp" class="form-control" value="{{ old('no_hp', $pemilik->no_hp ?? '') }}"
-                required>
+                required disabled>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Alamat</label>
-            <textarea name="alamat" class="form-control" rows="2" required>{{ old('alamat', $pemilik->alamat ?? '') }}</textarea>
+            <textarea name="alamat" class="form-control" rows="2" required disabled>{{ old('alamat', $pemilik->alamat ?? '') }}</textarea>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Nama Bank</label>
             <input type="text" name="nama_bank" class="form-control"
-                value="{{ old('nama_bank', $pemilik->nama_bank ?? '') }}">
+                value="{{ old('nama_bank', $pemilik->nama_bank ?? '') }}" disabled>
         </div>
 
         <div class="mb-3">
             <label class="form-label">No. Rekening</label>
             <input type="text" name="rekening_bank" class="form-control"
-                value="{{ old('rekening_bank', $pemilik->rekening_bank ?? '') }}">
+                value="{{ old('rekening_bank', $pemilik->rekening_bank ?? '') }}" disabled>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Atas Nama</label>
             <input type="text" name="atas_nama" class="form-control"
-                value="{{ old('atas_nama', $pemilik->atas_nama ?? '') }}">
+                value="{{ old('atas_nama', $pemilik->atas_nama ?? '') }}" disabled>
         </div>
 
         <div class="mb-3">

@@ -1,13 +1,13 @@
 <x-app-layout>
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        {{-- <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="bx bx-home-circle me-2"></i> Manajemen Pemilik Kost
             </h5>
             <a href="{{ route('admin.pemilik.create') }}" class="btn btn-primary">
                 <i class="bx bx-plus"></i> Tambah Pemilik
             </a>
-        </div>
+        </div> --}}
 
         <div class="card-body">
             {{-- Alert sukses --}}
