@@ -181,19 +181,19 @@
                     @endif
 
                     <!-- Actions -->
-                    <div class="flex gap-2">
-                        <a href="{{ route('history.show', $booking->id) }}" 
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('history.show', $booking->id) }}"
                            class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm font-medium">
                             Lihat Detail
                         </a>
-                        
+
                         @if($booking->canBeCancelled())
-                        <form action="{{ route('history.cancel', $booking->id) }}" 
-                              method="POST" 
+                        <form action="{{ route('history.cancel', $booking->id) }}"
+                              method="POST"
                               onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?')"
                               class="inline">
                             @csrf
-                            <button type="submit" 
+                            <button type="submit"
                                     class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
                                 Batalkan Booking
                             </button>
@@ -201,11 +201,30 @@
                         @endif
 
                         @if($booking->status === 'pending' && $booking->pembayaran && $booking->pembayaran->isPending())
-                        <a href="{{ $booking->pembayaran->payment_url }}" 
+                        <a href="{{ $booking->pembayaran->payment_url }}"
                            target="_blank"
                            class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm font-medium">
                             Bayar Sekarang
                         </a>
+                        @endif
+
+                        @if($booking->status === 'selesai')
+                            @if(!in_array($booking->kost_id, $reviewedKostIds))
+                            <button onclick="openReviewModal({{ $booking->id }})"
+                                    class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition text-sm font-medium flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                Beri Ulasan
+                            </button>
+                            @else
+                            <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Sudah Diulas
+                            </span>
+                            @endif
                         @endif
                     </div>
                 </div>
@@ -234,4 +253,132 @@
     @endif
 
 </main>
+
+{{-- Review Modals --}}
+@foreach($bookings as $booking)
+@if($booking->status === 'selesai' && !in_array($booking->kost_id, $reviewedKostIds))
+<div id="reviewModal-{{ $booking->id }}"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div class="p-6">
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800">Beri Ulasan</h3>
+                    <p class="text-sm text-gray-500 mt-1">{{ $booking->kost->nama }}</p>
+                </div>
+                <button onclick="closeReviewModal({{ $booking->id }})"
+                        class="text-gray-400 hover:text-gray-600 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form action="{{ route('review.store', $booking->id) }}" method="POST">
+                @csrf
+
+                {{-- Star Rating --}}
+                <div class="mb-5">
+                    <p class="text-sm font-medium text-gray-700 mb-3">Rating <span class="text-red-500">*</span></p>
+                    <div class="flex gap-1" id="stars-{{ $booking->id }}">
+                        @for($i = 1; $i <= 5; $i++)
+                        <button type="button"
+                                class="star-btn text-4xl text-gray-300 hover:text-amber-400 transition leading-none"
+                                data-value="{{ $i }}"
+                                data-group="{{ $booking->id }}"
+                                onmouseover="hoverRating({{ $booking->id }}, {{ $i }})"
+                                onmouseout="unhoverRating({{ $booking->id }})"
+                                onclick="setRating({{ $booking->id }}, {{ $i }})">&#9733;</button>
+                        @endfor
+                    </div>
+                    <input type="hidden" name="rating" id="rating-{{ $booking->id }}" value="">
+                    <p class="text-xs text-gray-400 mt-2" id="rating-text-{{ $booking->id }}">Pilih bintang di atas</p>
+                </div>
+
+                {{-- Komentar --}}
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Komentar <span class="text-gray-400 font-normal">(Opsional)</span></label>
+                    <textarea name="komentar"
+                              rows="4"
+                              maxlength="1000"
+                              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                              placeholder="Bagikan pengalaman Anda tinggal di sini..."></textarea>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit"
+                            class="flex-1 bg-teal-600 text-white py-2.5 rounded-lg font-semibold hover:bg-teal-700 transition text-sm">
+                        Kirim Ulasan
+                    </button>
+                    <button type="button"
+                            onclick="closeReviewModal({{ $booking->id }})"
+                            class="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition text-sm">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endif
+@endforeach
+
+@push('scripts')
+<script>
+    const ratingLabels = ['', 'Sangat Buruk', 'Buruk', 'Cukup', 'Bagus', 'Sangat Bagus'];
+    const selectedRatings = {};
+
+    function openReviewModal(bookingId) {
+        const modal = document.getElementById('reviewModal-' + bookingId);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeReviewModal(bookingId) {
+        const modal = document.getElementById('reviewModal-' + bookingId);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+
+    function setRating(groupId, value) {
+        selectedRatings[groupId] = value;
+        document.getElementById('rating-' + groupId).value = value;
+        document.getElementById('rating-text-' + groupId).textContent = ratingLabels[value];
+        renderStars(groupId, value);
+    }
+
+    function hoverRating(groupId, value) {
+        renderStars(groupId, value);
+    }
+
+    function unhoverRating(groupId) {
+        renderStars(groupId, selectedRatings[groupId] || 0);
+    }
+
+    function renderStars(groupId, value) {
+        const stars = document.querySelectorAll(`[data-group="${groupId}"]`);
+        stars.forEach(star => {
+            const starVal = parseInt(star.getAttribute('data-value'));
+            if (starVal <= value) {
+                star.classList.replace('text-gray-300', 'text-amber-400');
+            } else {
+                star.classList.replace('text-amber-400', 'text-gray-300');
+            }
+        });
+    }
+
+    // Close modal when clicking backdrop
+    document.querySelectorAll('[id^="reviewModal-"]').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+                this.classList.remove('flex');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

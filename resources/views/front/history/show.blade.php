@@ -190,22 +190,41 @@
 
         <!-- Actions -->
         <div class="p-6 bg-gray-50">
-            <div class="flex gap-3">
+            <div class="flex flex-wrap gap-3">
                 @if($booking->canBeCancelled())
-                <form action="{{ route('history.cancel', $booking->id) }}" 
-                      method="POST" 
+                <form action="{{ route('history.cancel', $booking->id) }}"
+                      method="POST"
                       onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?')"
-                      class="flex-1">
+                      class="flex-1 min-w-[140px]">
                     @csrf
-                    <button type="submit" 
+                    <button type="submit"
                             class="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold">
                         Batalkan Booking
                     </button>
                 </form>
                 @endif
-                
-                <a href="{{ route('history.index') }}" 
-                   class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-center">
+
+                @if($booking->status === 'selesai')
+                    @if(!$hasReviewed)
+                    <button onclick="document.getElementById('reviewSection').scrollIntoView({behavior:'smooth'})"
+                            class="flex-1 min-w-[140px] px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition font-semibold flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        Beri Ulasan
+                    </button>
+                    @else
+                    <span class="flex-1 min-w-[140px] px-6 py-3 bg-green-100 text-green-700 rounded-lg font-semibold flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Sudah Diulas
+                    </span>
+                    @endif
+                @endif
+
+                <a href="{{ route('history.index') }}"
+                   class="flex-1 min-w-[140px] px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition text-center">
                     Kembali
                 </a>
             </div>
@@ -289,5 +308,112 @@
     </div>
     @endif
 
+
+    {{-- Review Section (only for selesai bookings) --}}
+    @if($booking->status === 'selesai' && !$hasReviewed)
+    <div id="reviewSection" class="mt-8 bg-white rounded-2xl shadow-lg p-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-1">Beri Ulasan</h2>
+        <p class="text-sm text-gray-500 mb-6">Bagikan pengalaman Anda tinggal di {{ $booking->kost->nama }}</p>
+
+        @if(session('error'))
+        <div class="mb-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+            {{ session('error') }}
+        </div>
+        @endif
+
+        <form action="{{ route('review.store', $booking->id) }}" method="POST">
+            @csrf
+
+            {{-- Star Rating --}}
+            <div class="mb-6">
+                <p class="text-sm font-medium text-gray-700 mb-3">Rating <span class="text-red-500">*</span></p>
+                <div class="flex gap-1" id="stars-show">
+                    @for($i = 1; $i <= 5; $i++)
+                    <button type="button"
+                            class="star-btn text-5xl text-gray-300 hover:text-amber-400 transition leading-none"
+                            data-value="{{ $i }}"
+                            data-group="show"
+                            onmouseover="hoverRating('show', {{ $i }})"
+                            onmouseout="unhoverRating('show')"
+                            onclick="setRating('show', {{ $i }})">&#9733;</button>
+                    @endfor
+                </div>
+                <input type="hidden" name="rating" id="rating-show" value="">
+                <p class="text-sm text-gray-400 mt-2" id="rating-text-show">Pilih bintang di atas</p>
+                @error('rating')
+                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Komentar --}}
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Komentar <span class="text-gray-400 font-normal">(Opsional)</span>
+                </label>
+                <textarea name="komentar"
+                          rows="5"
+                          maxlength="1000"
+                          class="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                          placeholder="Bagikan pengalaman Anda tinggal di sini...">{{ old('komentar') }}</textarea>
+                @error('komentar')
+                <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <button type="submit"
+                    class="px-8 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition font-semibold">
+                Kirim Ulasan
+            </button>
+        </form>
+    </div>
+    @elseif($booking->status === 'selesai' && $hasReviewed)
+    <div id="reviewSection" class="mt-8 bg-white rounded-2xl shadow-lg p-6">
+        <div class="flex items-center gap-3 text-green-700">
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <div>
+                <p class="font-semibold">Ulasan Sudah Diberikan</p>
+                <p class="text-sm text-gray-500">Terima kasih telah berbagi pengalaman Anda.</p>
+            </div>
+        </div>
+    </div>
+    @endif
+
 </main>
+
+@push('scripts')
+<script>
+    const ratingLabels = ['', 'Sangat Buruk', 'Buruk', 'Cukup', 'Bagus', 'Sangat Bagus'];
+    const selectedRatings = {};
+
+    function setRating(groupId, value) {
+        selectedRatings[groupId] = value;
+        document.getElementById('rating-' + groupId).value = value;
+        document.getElementById('rating-text-' + groupId).textContent = ratingLabels[value];
+        renderStars(groupId, value);
+    }
+
+    function hoverRating(groupId, value) {
+        renderStars(groupId, value);
+    }
+
+    function unhoverRating(groupId) {
+        renderStars(groupId, selectedRatings[groupId] || 0);
+    }
+
+    function renderStars(groupId, value) {
+        document.querySelectorAll(`[data-group="${groupId}"]`).forEach(star => {
+            const starVal = parseInt(star.getAttribute('data-value'));
+            if (starVal <= value) {
+                star.classList.replace('text-gray-300', 'text-amber-400');
+            } else {
+                star.classList.replace('text-amber-400', 'text-gray-300');
+            }
+        });
+    }
+</script>
+@endpush
 @endsection

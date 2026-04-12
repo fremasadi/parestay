@@ -25,6 +25,7 @@ use App\Http\Controllers\Pemilik\LaporanPendapatanController as PemilikLaporanCo
 // Front / Public Controllers
 use App\Http\Controllers\Front\FrontController;
 use App\Http\Controllers\Front\HistoryController;
+use App\Http\Controllers\Front\ReviewController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PaymentController;
 
@@ -136,6 +137,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
     Route::get('/history/{id}', [HistoryController::class, 'show'])->name('history.show');
     Route::post('/history/{id}/cancel', [HistoryController::class, 'cancel'])->name('history.cancel');
+    Route::post('/history/{bookingId}/review', [ReviewController::class, 'store'])->name('review.store');
 });
 
 /*

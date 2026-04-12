@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 
 use App\Models\Booking;
+use App\Models\Review;
 use Illuminate\Http\Request;
 
 class HistoryController extends Controller
@@ -32,7 +33,11 @@ class HistoryController extends Controller
             'selesai' => Booking::where('user_id', auth()->id())->where('status', 'selesai')->count(),
         ];
         
-        return view('front.history.index', compact('bookings', 'stats', 'status'));
+        $reviewedKostIds = Review::where('reviewer_id', auth()->id())
+            ->pluck('kost_id')
+            ->toArray();
+
+        return view('front.history.index', compact('bookings', 'stats', 'status', 'reviewedKostIds'));
     }
 
     public function show($id)
@@ -41,7 +46,11 @@ class HistoryController extends Controller
             ->where('user_id', auth()->id())
             ->findOrFail($id);
         
-        return view('front.history.show', compact('booking'));
+        $hasReviewed = Review::where('kost_id', $booking->kost_id)
+            ->where('reviewer_id', auth()->id())
+            ->exists();
+
+        return view('front.history.show', compact('booking', 'hasReviewed'));
     }
 
     public function cancel($id)
