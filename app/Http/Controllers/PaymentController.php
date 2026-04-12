@@ -31,13 +31,23 @@ class PaymentController extends Controller
                 return redirect()->route('booking.index')->with('error', 'Akses ditolak');
             }
 
-            // ✅ PENTING: Cek apakah sudah ada payment untuk booking ini
+            // Cek apakah sudah ada payment untuk booking ini
             $existingPayment = Pembayaran::where('booking_id', $booking->id)->first();
 
             if ($existingPayment) {
-                // Jika sudah ada payment (apapun statusnya), redirect ke show
-                // JANGAN redirect ke create lagi!
                 return redirect()->route('payment.show', $existingPayment->id);
+            }
+
+            // ✅ SIAPA CEPAT BAYAR: Cek kamar masih tersedia sebelum buat token Midtrans
+            // (bisa terjadi jika user lain sudah bayar lebih dulu saat kita sampai di sini)
+            $kamarSudahDiambil = Booking::where('kamar_id', $booking->kamar_id)
+                ->where('status', 'aktif')
+                ->exists() || ($booking->kamar && $booking->kamar->status === 'dibooking');
+
+            if ($kamarSudahDiambil) {
+                $booking->update(['status' => 'dibatalkan']);
+                return redirect()->route('history.index')
+                    ->with('error', 'Maaf, kamar telah diambil oleh penyewa lain yang lebih dahulu melakukan pembayaran. Booking Anda otomatis dibatalkan.');
             }
 
             // ✅ Generate Order ID yang unik
@@ -305,23 +315,47 @@ class PaymentController extends Controller
         if ($transactionStatus === 'settlement' || $transactionStatus === 'capture') {
             $updateData['settlement_time'] = now();
 
-            // Update booking status menjadi aktif
-            $pembayaran->booking->update([
-                'status' => 'aktif',
-            ]);
+            $booking   = $pembayaran->booking;
+            $kamarId   = $booking->kamar_id;
 
-            // Update status kamar jika ada
-            if ($pembayaran->booking->kamar) {
-                $pembayaran->booking->kamar->update([
-                    'status' => 'dibooking',
+            // ✅ SIAPA CEPAT BAYAR: Guard race condition
+            // Cek apakah kamar sudah diambil oleh orang lain yang bayar lebih dulu
+            $sudahDiambil = Booking::where('kamar_id', $kamarId)
+                ->where('status', 'aktif')
+                ->where('id', '!=', $booking->id)
+                ->exists();
+
+            if ($sudahDiambil) {
+                // Kamar sudah diambil — batalkan booking ini
+                // (pembayaran Midtrans sudah masuk, perlu ditangani manual/refund oleh admin)
+                $booking->update(['status' => 'dibatalkan']);
+                $updateData['notes'] = 'Otomatis dibatalkan: kamar sudah diambil penyewa lain yang lebih dulu bayar.';
+
+                Log::warning('Race condition: kamar sudah diambil', [
+                    'booking_id'      => $booking->id,
+                    'kamar_id'        => $kamarId,
+                    'pembayaran_id'   => $pembayaran->id,
+                ]);
+            } else {
+                // Kamar masih kosong — user ini yang pertama bayar, berikan kamarnya
+                $booking->update(['status' => 'aktif']);
+
+                if ($booking->kamar) {
+                    $booking->kamar->update(['status' => 'dibooking']);
+                }
+
+                // Batalkan semua pending booking lain untuk kamar yang sama
+                Booking::where('kamar_id', $kamarId)
+                    ->where('status', 'pending')
+                    ->where('id', '!=', $booking->id)
+                    ->update(['status' => 'dibatalkan']);
+
+                Log::info('Pembayaran berhasil, kamar diberikan ke penyewa', [
+                    'booking_id' => $booking->id,
+                    'kamar_id'   => $kamarId,
+                    'user_id'    => $booking->user_id,
                 ]);
             }
-
-            // OPSIONAL: Kurangi slot tersedia di kost (jika masih pakai sistem slot)
-            // $kost = $pembayaran->booking->kost;
-            // if ($kost->slot_tersedia > 0) {
-            //     $kost->decrement('slot_tersedia');
-            // }
         }
 
         // Jika pembayaran gagal/expired/cancel
@@ -330,11 +364,16 @@ class PaymentController extends Controller
                 'status' => 'dibatalkan',
             ]);
 
-            // Kembalikan status kamar jadi tersedia
-            if ($pembayaran->booking->kamar) {
-                $pembayaran->booking->kamar->update([
-                    'status' => 'tersedia',
-                ]);
+            // Kembalikan status kamar jadi tersedia (hanya jika booking ini yang sedang aktif)
+            if ($pembayaran->booking->kamar && $pembayaran->booking->kamar->status === 'dibooking') {
+                $masihAdaAktif = Booking::where('kamar_id', $pembayaran->booking->kamar_id)
+                    ->where('status', 'aktif')
+                    ->where('id', '!=', $pembayaran->booking_id)
+                    ->exists();
+
+                if (!$masihAdaAktif) {
+                    $pembayaran->booking->kamar->update(['status' => 'tersedia']);
+                }
             }
         }
 

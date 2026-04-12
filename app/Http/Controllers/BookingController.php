@@ -43,13 +43,30 @@ class BookingController extends Controller
             'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
         ]);
 
-        // Kamar tidak tersedia jika sudah ada booking aktif (sudah dibayar)
-        $kamarSudahDibayar = Booking::where('kamar_id', $kamar->id)
+        // Blok jika kamar sudah dibayar / aktif
+        $kamarSudahAktif = Booking::where('kamar_id', $kamar->id)
             ->where('status', 'aktif')
             ->exists();
 
-        if ($kamarSudahDibayar || $kamar->status === 'dibooking') {
+        if ($kamarSudahAktif || $kamar->status === 'dibooking') {
             return redirect()->back()->with('error', 'Kamar tidak tersedia');
+        }
+
+        // Jika user ini sudah punya pending booking untuk kamar yang sama,
+        // arahkan langsung ke halaman pembayaran (jangan buat booking ganda)
+        $existingPending = Booking::where('kamar_id', $kamar->id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            $payment = $existingPending->pembayaran;
+            if ($payment) {
+                return redirect()->route('payment.show', $payment->id)
+                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
+            }
+            return redirect()->route('payment.create', $existingPending->id)
+                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
         }
 
         if (!$kamar->kost->terverifikasi) {
@@ -90,13 +107,29 @@ class BookingController extends Controller
 
         $kamar = Kamar::with('kost')->findOrFail($request->kamar_id);
 
-        // Kamar tidak tersedia jika sudah ada booking aktif (sudah dibayar)
-        $kamarSudahDibayar = Booking::where('kamar_id', $kamar->id)
+        // Blok jika kamar sudah dibayar / aktif
+        $kamarSudahAktif = Booking::where('kamar_id', $kamar->id)
             ->where('status', 'aktif')
             ->exists();
 
-        if ($kamarSudahDibayar || $kamar->status === 'dibooking') {
-            return back()->with('error', 'Maaf, kamar tidak tersedia')->withInput();
+        if ($kamarSudahAktif || $kamar->status === 'dibooking') {
+            return back()->with('error', 'Maaf, kamar sudah diambil oleh penyewa lain.')->withInput();
+        }
+
+        // Jika user ini sudah punya pending booking untuk kamar yang sama, arahkan ke pembayaran
+        $existingPending = Booking::where('kamar_id', $kamar->id)
+            ->where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            $payment = $existingPending->pembayaran;
+            if ($payment) {
+                return redirect()->route('payment.show', $payment->id)
+                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
+            }
+            return redirect()->route('payment.create', $existingPending->id)
+                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
         }
 
         if (!$kamar->kost->terverifikasi) {
