@@ -119,7 +119,7 @@
                             {{ ucfirst($kost->jenis_kost) }}
                         </span>
                         <span class="text-gray-600">
-                            {{ $kost->kamars()->where('status', 'tersedia')->count() }} kamar tersedia
+                            {{ $kost->kamars->filter(fn($k) => $k->is_available_now)->count() }} kamar tersedia
                         </span>
 
                         @if ($kost->terverifikasi)
@@ -137,7 +137,7 @@
                     @if ($kost->kamars->count() > 0)
                         <div class="space-y-4">
                             @foreach ($kost->kamars as $kamar)
-                                @php $tersedia = $kamar->status === 'tersedia'; @endphp
+                                @php $tersedia = $kamar->is_available_now; @endphp
                                 <div class="border {{ $tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-gray-100 opacity-70' }} rounded-lg p-4 transition-colors cursor-pointer group"
                                     onclick="selectRoom({{ $kamar->id }})">
                                     <div class="flex justify-between items-start">
@@ -307,7 +307,7 @@
 
                     <!-- Harga Range Info -->
                     @php
-                        $kamarTersedia = $kost->kamars()->where('status', 'tersedia')->get();
+                        $kamarTersedia = $kost->kamars->filter(fn($k) => $k->is_available_now);
                         $minHarga = $kamarTersedia->min('harga');
                         $maxHarga = $kamarTersedia->max('harga');
                     @endphp

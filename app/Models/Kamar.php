@@ -31,4 +31,51 @@ class Kamar extends Model
     {
         return $this->belongsTo(Kost::class);
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    /**
+     * Apakah kamar sedang ditempati HARI INI (ada booking aktif yang mencakup hari ini).
+     */
+    public function isOccupiedNow(): bool
+    {
+        return $this->bookings()
+            ->where('status', 'aktif')
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_selesai', '>', today())
+            ->exists();
+    }
+
+    /**
+     * Apakah kamar tersedia untuk rentang tanggal [mulai, selesai)?
+     * Digunakan saat validasi store booking.
+     */
+    public function isAvailableForDates($mulai, $selesai): bool
+    {
+        return !$this->bookings()
+            ->where('status', 'aktif')
+            ->where('tanggal_mulai', '<', $selesai)
+            ->where('tanggal_selesai', '>', $mulai)
+            ->exists();
+    }
+
+    /**
+     * Accessor untuk cek tersedia hari ini.
+     * Jika relasi bookings sudah di-eager-load, pakai collection (hemat query).
+     */
+    public function getIsAvailableNowAttribute(): bool
+    {
+        if ($this->relationLoaded('bookings')) {
+            $today = now();
+            return !$this->bookings->contains(fn($b) =>
+                $b->status === 'aktif'
+                && $b->tanggal_mulai->lte($today)
+                && $b->tanggal_selesai->gt($today)
+            );
+        }
+        return !$this->isOccupiedNow();
+    }
 }

@@ -43,13 +43,9 @@ class BookingController extends Controller
             'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
         ]);
 
-        // Blok jika kamar sudah dibayar / aktif
-        $kamarSudahAktif = Booking::where('kamar_id', $kamar->id)
-            ->where('status', 'aktif')
-            ->exists();
-
-        if ($kamarSudahAktif || $kamar->status === 'dibooking') {
-            return redirect()->back()->with('error', 'Kamar tidak tersedia');
+        // Blok hanya jika kamar sedang ditempati HARI INI (tanggal hari ini masuk periode booking aktif)
+        if ($kamar->isOccupiedNow()) {
+            return redirect()->back()->with('error', 'Kamar sedang ditempati. Silakan cek kembali setelah masa sewa berakhir.');
         }
 
         // Jika user ini sudah punya pending booking untuk kamar yang sama,
@@ -107,33 +103,43 @@ class BookingController extends Controller
 
         $kamar = Kamar::with('kost')->findOrFail($request->kamar_id);
 
-        // Blok jika kamar sudah dibayar / aktif
-        $kamarSudahAktif = Booking::where('kamar_id', $kamar->id)
-            ->where('status', 'aktif')
-            ->exists();
-
-        if ($kamarSudahAktif || $kamar->status === 'dibooking') {
-            return back()->with('error', 'Maaf, kamar sudah diambil oleh penyewa lain.')->withInput();
+        if (!$kamar->kost->terverifikasi) {
+            return back()->with('error', 'Kost belum terverifikasi')->withInput();
         }
 
-        // Jika user ini sudah punya pending booking untuk kamar yang sama, arahkan ke pembayaran
+        // Hitung tanggal selesai lebih awal untuk validasi ketersediaan tanggal
+        $tanggalMulai   = \Carbon\Carbon::parse($validated['tanggal_mulai']);
+        $tanggalSelesai = match ($request->durasi_type) {
+            'harian'   => $tanggalMulai->copy()->addDays((int) $request->durasi),
+            'mingguan' => $tanggalMulai->copy()->addWeeks((int) $request->durasi),
+            'bulanan'  => $tanggalMulai->copy()->addMonths((int) $request->durasi),
+            default    => $tanggalMulai->copy()->addDays((int) $request->durasi),
+        };
+
+        // Cek overlap tanggal: apakah ada booking aktif yang bertabrakan dengan rentang ini?
+        $adaOverlap = Booking::overlaps($kamar->id, $tanggalMulai, $tanggalSelesai)->exists();
+        if ($adaOverlap) {
+            return back()
+                ->with('error', 'Kamar sudah dipesan untuk sebagian atau seluruh tanggal yang Anda pilih. Silakan pilih tanggal lain.')
+                ->withInput();
+        }
+
+        // Jika user ini sudah punya pending booking yang overlap dengan tanggal ini, arahkan ke pembayaran
         $existingPending = Booking::where('kamar_id', $kamar->id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
+            ->where('tanggal_mulai', '<', $tanggalSelesai)
+            ->where('tanggal_selesai', '>', $tanggalMulai)
             ->first();
 
         if ($existingPending) {
             $payment = $existingPending->pembayaran;
             if ($payment) {
                 return redirect()->route('payment.show', $payment->id)
-                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
+                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar dan tanggal ini. Silakan selesaikan pembayaran.');
             }
             return redirect()->route('payment.create', $existingPending->id)
-                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
-        }
-
-        if (!$kamar->kost->terverifikasi) {
-            return back()->with('error', 'Kost belum terverifikasi')->withInput();
+                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar dan tanggal ini. Silakan selesaikan pembayaran.');
         }
 
         try {
@@ -145,18 +151,9 @@ class BookingController extends Controller
                 $fotoKtpPath = $request->file('foto_ktp')->store('ktp', 'public');
             }
 
-            // ✅ Hitung tanggal selesai berdasarkan durasi_type
-            $tanggalMulai = \Carbon\Carbon::parse($validated['tanggal_mulai']);
+            // tanggalMulai & tanggalSelesai sudah dihitung sebelum try block
 
-            $tanggalSelesai = match ($request->durasi_type) {
-                'harian' => $tanggalMulai->copy()->addDays((int) $request->durasi),
-                'mingguan' => $tanggalMulai->copy()->addWeeks((int) $request->durasi),
-                'bulanan' => $tanggalMulai->copy()->addMonths((int) $request->durasi),
-                default => $tanggalMulai->copy()->addDays((int) $request->durasi),
-            };
-
-            // ✅ OPSI 1: Simpan durasi asli (3 bulan tetap 3)
-            // Lebih jelas untuk business logic dan laporan
+            // Simpan durasi asli (3 bulan tetap 3)
             $durasi = $request->durasi;
             $durasiType = $request->durasi_type;
 

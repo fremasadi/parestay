@@ -47,6 +47,19 @@ class Booking extends Model
     }
 
     /**
+     * Scope: cek apakah ada booking aktif yang overlap dengan rentang tanggal tertentu.
+     * Overlap terjadi jika: existing.mulai < $selesai AND existing.selesai > $mulai
+     */
+    public function scopeOverlaps($query, int $kamarId, $mulai, $selesai)
+    {
+        return $query
+            ->where('kamar_id', $kamarId)
+            ->where('status', 'aktif')
+            ->where('tanggal_mulai', '<', $selesai)
+            ->where('tanggal_selesai', '>', $mulai);
+    }
+
+    /**
      * Get status badge class
      */
     public function getStatusBadgeClass()

@@ -38,16 +38,18 @@ class PaymentController extends Controller
                 return redirect()->route('payment.show', $existingPayment->id);
             }
 
-            // ✅ SIAPA CEPAT BAYAR: Cek kamar masih tersedia sebelum buat token Midtrans
-            // (bisa terjadi jika user lain sudah bayar lebih dulu saat kita sampai di sini)
-            $kamarSudahDiambil = Booking::where('kamar_id', $booking->kamar_id)
-                ->where('status', 'aktif')
-                ->exists() || ($booking->kamar && $booking->kamar->status === 'dibooking');
+            // ✅ SIAPA CEPAT BAYAR: Cek kamar masih tersedia untuk tanggal booking ini
+            // sebelum buat token Midtrans (hindari buat token kalau kamar sudah diambil)
+            $adaOverlap = Booking::overlaps(
+                $booking->kamar_id,
+                $booking->tanggal_mulai,
+                $booking->tanggal_selesai
+            )->where('id', '!=', $booking->id)->exists();
 
-            if ($kamarSudahDiambil) {
+            if ($adaOverlap) {
                 $booking->update(['status' => 'dibatalkan']);
                 return redirect()->route('history.index')
-                    ->with('error', 'Maaf, kamar telah diambil oleh penyewa lain yang lebih dahulu melakukan pembayaran. Booking Anda otomatis dibatalkan.');
+                    ->with('error', 'Maaf, kamar sudah dipesan orang lain untuk tanggal tersebut. Booking Anda otomatis dibatalkan.');
             }
 
             // ✅ Generate Order ID yang unik
@@ -344,10 +346,13 @@ class PaymentController extends Controller
                     $booking->kamar->update(['status' => 'dibooking']);
                 }
 
-                // Batalkan semua pending booking lain untuk kamar yang sama
+                // Batalkan hanya pending booking yang OVERLAP tanggalnya dengan booking ini
+                // (booking untuk periode berbeda tetap bisa berjalan)
                 Booking::where('kamar_id', $kamarId)
                     ->where('status', 'pending')
                     ->where('id', '!=', $booking->id)
+                    ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
+                    ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
                     ->update(['status' => 'dibatalkan']);
 
                 Log::info('Pembayaran berhasil, kamar diberikan ke penyewa', [

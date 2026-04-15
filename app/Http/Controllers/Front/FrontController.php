@@ -179,7 +179,11 @@ class FrontController extends Controller
 
     public function show($id)
     {
-        $kost = Kost::with(['reviews.reviewer', 'pemilik.user', 'kamars'])->findOrFail($id);
+        $kost = Kost::with([
+            'reviews.reviewer',
+            'pemilik.user',
+            'kamars' => fn($q) => $q->with(['bookings' => fn($bq) => $bq->where('status', 'aktif')]),
+        ])->findOrFail($id);
         return view('front.kost-detail', compact('kost'));
     }
 }
