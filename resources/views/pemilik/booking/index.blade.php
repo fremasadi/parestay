@@ -1,7 +1,38 @@
 <x-app-layout>
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bx bx-book-content me-2"></i> Data Booking Kost</h5>
+
+            <form method="GET" action="{{ route('pemilik.booking.index') }}" class="d-flex flex-wrap gap-2">
+                <select name="status" class="form-select form-select-sm" style="width:auto">
+                    <option value="">Semua Status</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Pembayaran</option>
+                    <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
+                    <option value="dibatalkan" {{ request('status') === 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                </select>
+
+                <input
+                    type="date"
+                    name="tanggal_dari"
+                    value="{{ request('tanggal_dari') }}"
+                    class="form-control form-control-sm"
+                    style="width:auto"
+                    title="Tanggal mulai dari"
+                >
+
+                <input
+                    type="date"
+                    name="tanggal_sampai"
+                    value="{{ request('tanggal_sampai') }}"
+                    class="form-control form-control-sm"
+                    style="width:auto"
+                    title="Tanggal mulai sampai"
+                >
+
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                <a href="{{ route('pemilik.booking.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </form>
         </div>
 
         <div class="card-body">
@@ -64,7 +95,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="bx bx-book-content" style="font-size: 3rem;"></i>
                                     <p class="mt-2">Belum ada data booking</p>
                                 </td>

@@ -78,4 +78,31 @@ class Kamar extends Model
         }
         return !$this->isOccupiedNow();
     }
+
+    /**
+     * Tanggal pertama yang benar-benar kosong (setelah semua booking aktif selesai).
+     * Menangani booking berantai: Jan 1–15, Jan 15–28 → tersedia 28 Jan.
+     */
+    public function getNextAvailableDateAttribute(): \Carbon\Carbon
+    {
+        $bookings = $this->relationLoaded('bookings')
+            ? $this->bookings->where('status', 'aktif')->sortBy('tanggal_mulai')
+            : $this->bookings()->where('status', 'aktif')->orderBy('tanggal_mulai')->get();
+
+        $date    = now()->startOfDay();
+        $changed = true;
+
+        while ($changed) {
+            $changed = false;
+            foreach ($bookings as $b) {
+                if ($b->tanggal_mulai->lte($date) && $b->tanggal_selesai->gt($date)) {
+                    $date    = $b->tanggal_selesai->copy()->startOfDay();
+                    $changed = true;
+                    break;
+                }
+            }
+        }
+
+        return $date;
+    }
 }

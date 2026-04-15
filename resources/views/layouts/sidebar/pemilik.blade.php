@@ -39,7 +39,7 @@
         <li class="menu-item {{ request()->routeIs('pemilik.booking.*') ? 'active' : '' }}">
             <a href="{{ route('pemilik.booking.index') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-receipt"></i>
-                <div>Penyewaan Aktif <span class="badge badge-center rounded-pill bg-label-secondary ms-2"></span>
+                <div>Data Penyewaan<span class="badge badge-center rounded-pill bg-label-secondary ms-2"></span>
                 </div>
             </a>
         </li>

@@ -138,7 +138,7 @@
                         <div class="space-y-4">
                             @foreach ($kost->kamars as $kamar)
                                 @php $tersedia = $kamar->is_available_now; @endphp
-                                <div class="border {{ $tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-gray-100 opacity-70' }} rounded-lg p-4 transition-colors cursor-pointer group"
+                                <div class="border {{ $tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-orange-200 hover:border-orange-400' }} rounded-lg p-4 transition-colors cursor-pointer group"
                                     onclick="selectRoom({{ $kamar->id }})">
                                     <div class="flex justify-between items-start">
                                         <div class="flex-1">
@@ -149,8 +149,11 @@
                                                         Tersedia
                                                     </span>
                                                 @else
-                                                    <span class="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full">
-                                                        Tidak Tersedia
+                                                    <span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
+                                                        Sedang Terisi
+                                                    </span>
+                                                    <span class="text-xs text-gray-500">
+                                                        mulai {{ $kamar->next_available_date->translatedFormat('d M Y') }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -213,10 +216,22 @@
                                                     </a>
                                                 @endauth
                                             @else
-                                                <button disabled
-                                                    class="mt-3 px-4 py-2 bg-gray-200 text-gray-400 rounded-lg text-sm cursor-not-allowed">
-                                                    Tidak Tersedia
-                                                </button>
+                                                @auth
+                                                    @if ($kost->terverifikasi)
+                                                        <button type="button" onclick="bookRoom({{ $kamar->id }})"
+                                                            class="mt-3 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-semibold hover:bg-orange-600 transition-colors">
+                                                            Pesan Nanti
+                                                        </button>
+                                                        <p class="text-xs text-gray-400 mt-1">
+                                                            Dari {{ $kamar->next_available_date->translatedFormat('d M Y') }}
+                                                        </p>
+                                                    @endif
+                                                @else
+                                                    <a href="{{ route('login') }}"
+                                                        class="mt-3 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-semibold hover:bg-orange-600 transition-colors">
+                                                        Pesan Nanti
+                                                    </a>
+                                                @endauth
                                             @endif
                                         </div>
                                     </div>

@@ -43,16 +43,16 @@ class BookingController extends Controller
             'kost_terverifikasi' => $kamar->kost->terverifikasi ?? null,
         ]);
 
-        // Blok hanya jika kamar sedang ditempati HARI INI (tanggal hari ini masuk periode booking aktif)
-        if ($kamar->isOccupiedNow()) {
-            return redirect()->back()->with('error', 'Kamar sedang ditempati. Silakan cek kembali setelah masa sewa berakhir.');
+        if (!$kamar->kost->terverifikasi) {
+            return redirect()->back()->with('error', 'Kost belum terverifikasi');
         }
 
-        // Jika user ini sudah punya pending booking untuk kamar yang sama,
-        // arahkan langsung ke halaman pembayaran (jangan buat booking ganda)
-        $existingPending = Booking::where('kamar_id', $kamar->id)
+        // Jika user sudah punya pending booking yang overlap dengan tanggal tersedia → arahkan ke pembayaran
+        $nextAvailableDate = $kamar->next_available_date; // Carbon
+        $existingPending   = Booking::where('kamar_id', $kamar->id)
             ->where('user_id', auth()->id())
             ->where('status', 'pending')
+            ->where('tanggal_mulai', '>=', $nextAvailableDate)
             ->first();
 
         if ($existingPending) {
@@ -65,21 +65,28 @@ class BookingController extends Controller
                 ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
         }
 
-        if (!$kamar->kost->terverifikasi) {
-            return redirect()->back()->with('error', 'Kost belum terverifikasi');
-        }
+        // Load booking aktif untuk ditampilkan di form (info tanggal terisi)
+        $bookingsAktif = Booking::where('kamar_id', $kamar->id)
+            ->where('status', 'aktif')
+            ->orderBy('tanggal_mulai')
+            ->get(['tanggal_mulai', 'tanggal_selesai']);
 
-        // ✅ Ambil penyewa SATU KALI SAJA
-        $penyewa = null;
+        // Rentang tanggal terisi (untuk JS date picker)
+        $occupiedRanges = $bookingsAktif->map(fn($b) => [
+            'mulai'   => $b->tanggal_mulai->format('Y-m-d'),
+            'selesai' => $b->tanggal_selesai->subDay()->format('Y-m-d'), // selesai inklusif untuk display
+        ])->values()->toArray();
 
-        if (auth()->check()) {
-            $penyewa = Penyewa::where('user_id', auth()->id())->first();
-        }
+        $nextAvailableDateStr = $nextAvailableDate->format('Y-m-d');
 
-        // ✅ Cek kelengkapan
+        // Ambil penyewa
+        $penyewa    = auth()->check() ? Penyewa::where('user_id', auth()->id())->first() : null;
         $dataLengkap = $penyewa && $penyewa->no_ktp && $penyewa->foto_ktp && $penyewa->no_hp && $penyewa->alamat && $penyewa->pekerjaan;
 
-        return view('front.booking.create', compact('kamar', 'penyewa', 'dataLengkap'));
+        return view('front.booking.create', compact(
+            'kamar', 'penyewa', 'dataLengkap',
+            'occupiedRanges', 'nextAvailableDateStr'
+        ));
     }
 
     /**
