@@ -38,13 +38,13 @@ class PaymentController extends Controller
                 return redirect()->route('payment.show', $existingPayment->id);
             }
 
-            // ✅ SIAPA CEPAT BAYAR: Cek kamar masih tersedia untuk tanggal booking ini
-            // sebelum buat token Midtrans (hindari buat token kalau kamar sudah diambil)
-            $adaOverlap = Booking::overlaps(
-                $booking->kamar_id,
-                $booking->tanggal_mulai,
-                $booking->tanggal_selesai
-            )->where('id', '!=', $booking->id)->exists();
+            // Cek kamar masih tersedia: ada booking aktif lain yang tanggalnya overlap?
+            $adaOverlap = Booking::where('kamar_id', $booking->kamar_id)
+                ->where('status', 'aktif')
+                ->where('id', '!=', $booking->id)
+                ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
+                ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
+                ->exists();
 
             if ($adaOverlap) {
                 $booking->update(['status' => 'dibatalkan']);

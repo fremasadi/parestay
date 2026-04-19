@@ -80,7 +80,7 @@
             @endif
 
             <!-- Form -->
-            <form action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
+            <form id="booking-form" action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
                 @csrf
                 <input type="hidden" name="kamar_id" value="{{ $kamar->id }}">
                 <input type="hidden" name="durasi_type" value="{{ $kamar->type_harga }}">
@@ -265,7 +265,7 @@
 
             function konfirmasiPembayaran() {
                 // Validasi form dulu sebelum tampilkan Swal
-                const form = document.querySelector('form');
+                const form = document.getElementById('booking-form');
                 if (!form.checkValidity()) {
                     form.reportValidity();
                     return;

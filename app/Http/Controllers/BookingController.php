@@ -101,6 +101,8 @@ class BookingController extends Controller
      */
     public function store(Request $request)
     {
+        Log::info('Booking store called', ['user_id' => auth()->id(), 'input' => $request->except('_token')]);
+
         $validated = $request->validate(
             [
                 'kamar_id' => 'required|exists:kamars,id',
