@@ -44,21 +44,21 @@
                                     <div class="btn-group">
 
                                         <!-- 👁 SHOW -->
-                                        <a href="{{ route('admin.penyewa.show', $penyewa) }}"
-                                            class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="Lihat Detail">
+                                        <a href="{{ route('admin.penyewa.show', $penyewa) }}" class="btn btn-sm btn-info"
+                                            data-bs-toggle="tooltip" title="Lihat Detail">
                                             <i class="bx bx-show"></i>
                                         </a>
-                                        <a href="{{ route('admin.penyewa.edit', $penyewa) }}"
-                                            class="btn btn-sm btn-warning">
-                                            <i class="bx bx-edit"></i>
-                                        </a>
+                                        <!-- <a href="{{ route('admin.penyewa.edit', $penyewa) }}"
+                                                    class="btn btn-sm btn-warning">
+                                                    <i class="bx bx-edit"></i>
+                                                </a> -->
                                         <!-- <form action="{{ route('admin.penyewa.destroy', $penyewa) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus penyewa ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
-                                        </form> -->
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        <i class="bx bx-trash"></i>
+                                                    </button>
+                                                </form> -->
                                     </div>
                                 </td>
                             </tr>
@@ -76,6 +76,6 @@
                 {{ $penyewas->links('pagination::bootstrap-5') }}
             </div>
         </div>
-    
+
     </div>
 </x-app-layout>

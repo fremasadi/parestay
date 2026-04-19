@@ -7,15 +7,14 @@
         </div>
         <div class="mb-3">
             <label class="form-label">Alamat</label>
-            <textarea name="alamat" class="form-control" rows="2" required>{{ old('alamat', $kursus->alamat ?? '') }}</textarea>
+            <input type="text" name="alamat" class="form-control" value="{{ old('alamat', $kursus->alamat ?? '') }}" placeholder="Masukkan alamat atau cari di peta" required>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Latitude</label>
-            <input type="text" name="latitude" class="form-control" value="{{ old('latitude', $kursus->latitude ?? '') }}" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Longitude</label>
-            <input type="text" name="longitude" class="form-control" value="{{ old('longitude', $kursus->longitude ?? '') }}" required>
-        </div>
+
+        {{-- Peta --}}
+        @include('components.maps-picker', [
+            'latitude'  => $kursus->latitude ?? null,
+            'longitude' => $kursus->longitude ?? null,
+            'mapId'     => 'kursus-form',
+        ])
     </div>
 </div>
