@@ -103,6 +103,7 @@ Route::middleware(['auth', 'role:pemilik'])
 
         // Booking & Pembayaran Pemilik
         Route::get('/booking', [PemilikBookingController::class, 'index'])->name('booking.index');
+        Route::get('/booking/export', [PemilikBookingController::class, 'export'])->name('booking.export');
         Route::get('/pembayaran', [PemilikPembayaranController::class, 'index'])->name('pembayaran.index');
 
         // Laporan Pendapatan & Penarikan Dana Pemilik

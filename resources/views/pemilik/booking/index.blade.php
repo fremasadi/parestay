@@ -33,6 +33,12 @@
                 <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
                 <a href="{{ route('pemilik.booking.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
             </form>
+
+            <a href="{{ route('pemilik.booking.export', request()->query()) }}"
+               target="_blank"
+               class="btn btn-sm btn-danger">
+                <i class="bx bxs-file-pdf me-1"></i> Export PDF
+            </a>
         </div>
 
         <div class="card-body">

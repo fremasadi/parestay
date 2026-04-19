@@ -277,7 +277,7 @@
                                 title: kost.nama,
                                 label: {
                                     text: 'Rp ' + formatHarga(kost.harga),
-                                    color: 'white',
+                                    color: '#000000',
                                     fontSize: '11px',
                                     fontWeight: 'bold',
                                     className: 'map-label'
