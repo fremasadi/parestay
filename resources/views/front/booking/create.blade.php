@@ -83,15 +83,11 @@
             <form action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
                 @csrf
                 <input type="hidden" name="kamar_id" value="{{ $kamar->id }}">
-                <input type="hidden" name="durasi_type" id="durasi_type" value="{{ $kamar->type_harga }}">
-
+                <input type="hidden" name="durasi_type" value="{{ $kamar->type_harga }}">
 
                 <!-- Detail Booking -->
                 <div>
                     <h3 class="text-lg font-bold mb-4 text-gray-800">Detail Booking</h3>
-
-                    <!-- ✅ Hidden input durasi_type -->
-                    <input type="hidden" name="durasi_type" id="durasi_type" value="{{ $kamar->type_harga }}">
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- Tanggal Mulai -->

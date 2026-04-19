@@ -47,12 +47,10 @@ class BookingController extends Controller
             return redirect()->back()->with('error', 'Kost belum terverifikasi');
         }
 
-        // Jika user sudah punya pending booking yang overlap dengan tanggal tersedia → arahkan ke pembayaran
-        $nextAvailableDate = $kamar->next_available_date; // Carbon
-        $existingPending   = Booking::where('kamar_id', $kamar->id)
+        // Cek jika user sudah punya pending booking untuk kamar ini
+        $existingPending = Booking::where('kamar_id', $kamar->id)
             ->where('user_id', auth()->id())
             ->where('status', 'pending')
-            ->where('tanggal_mulai', '>=', $nextAvailableDate)
             ->first();
 
         if ($existingPending) {
@@ -65,16 +63,25 @@ class BookingController extends Controller
                 ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
         }
 
-        // Load booking aktif untuk ditampilkan di form (info tanggal terisi)
+        // Hitung tanggal tersedia berikutnya dari booking aktif terakhir
+        $latestActiveBooking = Booking::where('kamar_id', $kamar->id)
+            ->where('status', 'aktif')
+            ->orderBy('tanggal_selesai', 'desc')
+            ->first();
+
+        $nextAvailableDate = $latestActiveBooking
+            ? \Carbon\Carbon::parse($latestActiveBooking->tanggal_selesai)
+            : \Carbon\Carbon::today();
+
+        // Rentang tanggal terisi (untuk info di form)
         $bookingsAktif = Booking::where('kamar_id', $kamar->id)
             ->where('status', 'aktif')
             ->orderBy('tanggal_mulai')
             ->get(['tanggal_mulai', 'tanggal_selesai']);
 
-        // Rentang tanggal terisi (untuk JS date picker)
         $occupiedRanges = $bookingsAktif->map(fn($b) => [
             'mulai'   => $b->tanggal_mulai->format('Y-m-d'),
-            'selesai' => $b->tanggal_selesai->subDay()->format('Y-m-d'), // selesai inklusif untuk display
+            'selesai' => $b->tanggal_selesai->format('Y-m-d'),
         ])->values()->toArray();
 
         $nextAvailableDateStr = $nextAvailableDate->format('Y-m-d');
@@ -123,30 +130,33 @@ class BookingController extends Controller
             default    => $tanggalMulai->copy()->addDays((int) $request->durasi),
         };
 
-        // Cek overlap tanggal: apakah ada booking aktif yang bertabrakan dengan rentang ini?
-        $adaOverlap = Booking::overlaps($kamar->id, $tanggalMulai, $tanggalSelesai)->exists();
+        // Cek overlap: ada booking aktif yang tanggalnya bertabrakan?
+        $adaOverlap = Booking::where('kamar_id', $kamar->id)
+            ->where('status', 'aktif')
+            ->where('tanggal_mulai', '<', $tanggalSelesai)
+            ->where('tanggal_selesai', '>', $tanggalMulai)
+            ->exists();
+
         if ($adaOverlap) {
             return back()
                 ->with('error', 'Kamar sudah dipesan untuk sebagian atau seluruh tanggal yang Anda pilih. Silakan pilih tanggal lain.')
                 ->withInput();
         }
 
-        // Jika user ini sudah punya pending booking yang overlap dengan tanggal ini, arahkan ke pembayaran
+        // Jika user sudah punya pending booking untuk kamar ini, arahkan ke pembayaran
         $existingPending = Booking::where('kamar_id', $kamar->id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
-            ->where('tanggal_mulai', '<', $tanggalSelesai)
-            ->where('tanggal_selesai', '>', $tanggalMulai)
             ->first();
 
         if ($existingPending) {
             $payment = $existingPending->pembayaran;
             if ($payment) {
                 return redirect()->route('payment.show', $payment->id)
-                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar dan tanggal ini. Silakan selesaikan pembayaran.');
+                    ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
             }
             return redirect()->route('payment.create', $existingPending->id)
-                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar dan tanggal ini. Silakan selesaikan pembayaran.');
+                ->with('info', 'Anda sudah memiliki pemesanan untuk kamar ini. Silakan selesaikan pembayaran.');
         }
 
         try {
