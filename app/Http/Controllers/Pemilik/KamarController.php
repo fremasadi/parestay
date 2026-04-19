@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Pemilik;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kamar;
-use App\Models\Kost;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class KamarController extends Controller
 {
@@ -66,7 +64,7 @@ class KamarController extends Controller
 
     public function edit(Kamar $kamar)
     {
-        $kosts = Kost::where('owner_id', auth()->id())->get();
+        $kosts = auth()->user()->pemilik->kosts;
         return view('pemilik.kamar.edit', compact('kamar', 'kosts'));
     }
 
