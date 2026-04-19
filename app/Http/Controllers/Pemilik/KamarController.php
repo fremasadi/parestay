@@ -71,16 +71,19 @@ class KamarController extends Controller
     public function update(Request $request, Kamar $kamar)
     {
         $request->validate([
-            'kost_id' => 'required|exists:kosts,id',
-            'nomor_kamar' => 'required|string|max:50',
-            'harga' => 'required|integer|min:0',
-            'type_harga' => 'required|in:harian,bulanan,tahunan',
-            'luas_kamar' => 'nullable|string|max:50',
-            'fasilitas' => 'nullable|array',
-            'status' => 'required|in:tersedia,dibooking,nonaktif',
+            'kost_id'      => 'required|exists:kosts,id',
+            'nomor_kamar'  => 'required|string|max:50',
+            'harga'        => 'required|integer|min:0',
+            'type_harga'   => 'required|in:harian,bulanan,tahunan',
+            'luas_kamar'   => 'nullable|string|max:50',
+            'fasilitas'    => 'nullable|string',
+            'status'       => 'required|in:tersedia,dibooking,nonaktif',
         ]);
 
-        $kamar->update($request->all());
+        $data = $request->only(['kost_id', 'nomor_kamar', 'harga', 'type_harga', 'luas_kamar', 'status']);
+        $data['fasilitas'] = $request->fasilitas ?: '[]';
+
+        $kamar->update($data);
 
         return redirect()->route('pemilik.kamar.index')->with('success', 'Kamar berhasil diperbarui.');
     }
