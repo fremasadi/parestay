@@ -1,6 +1,7 @@
 <div class="col-12">
     <label class="form-label">Pilih Lokasi di Peta</label>
-    <input id="searchInput-{{ $mapId ?? 'default' }}" class="form-control mb-2" type="text" placeholder="Cari lokasi...">
+    <input id="searchInput-{{ $mapId ?? 'default' }}" class="form-control mb-2" type="text" placeholder="Cari lokasi..." autocomplete="off">
+    <ul id="searchResults-{{ $mapId ?? 'default' }}" class="list-group mb-2" style="display:none; position:absolute; z-index:1000; width:calc(100% - 30px);"></ul>
     <div id="map-{{ $mapId ?? 'default' }}" style="height: 350px; border-radius: 10px;"></div>
 </div>
 
@@ -9,8 +10,8 @@
 <input type="hidden" id="longitude-{{ $mapId ?? 'default' }}" name="longitude" value="{{ $longitude ?? old('longitude') }}">
 
 @once
-    {{-- Muat Google Maps hanya sekali --}}
-    <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&libraries=places"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 @endonce
 
 @push('scripts')
@@ -20,80 +21,96 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const mapEl = document.getElementById("map-" + mapId);
     const searchInput = document.getElementById("searchInput-" + mapId);
+    const searchResults = document.getElementById("searchResults-" + mapId);
     const latInput = document.getElementById("latitude-" + mapId);
     const lngInput = document.getElementById("longitude-" + mapId);
-    const alamatInput = document.querySelector("input[name='alamat']");
+    const alamatInput = document.querySelector("input[name='alamat'], textarea[name='alamat']");
 
     if (!mapEl) return;
 
-    function initMap() {
-        // 🌏 Gunakan default koordinat Malang jika kosong
-        const defaultLat = parseFloat(latInput.value) || -7.752361;
-        const defaultLng = parseFloat(lngInput.value) || 112.201167;
-        const initialPos = { lat: defaultLat, lng: defaultLng };
+    const defaultLat = parseFloat(latInput.value) || -7.752361;
+    const defaultLng = parseFloat(lngInput.value) || 112.201167;
 
-        const map = new google.maps.Map(mapEl, {
-            center: initialPos,
-            zoom: 13,
-        });
+    const map = L.map(mapEl).setView([defaultLat, defaultLng], 13);
 
-        const marker = new google.maps.Marker({
-            position: initialPos,
-            map: map,
-            draggable: true,
-        });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+    }).addTo(map);
 
-        // Klik peta → update posisi marker
-        map.addListener("click", function (event) {
-            marker.setPosition(event.latLng);
-            updateLatLng(event.latLng.lat(), event.latLng.lng());
-            reverseGeocode(event.latLng);
-        });
+    const marker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(map);
 
-        // Drag marker → update posisi marker
-        marker.addListener("dragend", function (event) {
-            updateLatLng(event.latLng.lat(), event.latLng.lng());
-            reverseGeocode(event.latLng);
-        });
-
-        // Fitur autocomplete pencarian
-        const autocomplete = new google.maps.places.Autocomplete(searchInput);
-        autocomplete.bindTo("bounds", map);
-        autocomplete.addListener("place_changed", function () {
-            const place = autocomplete.getPlace();
-            if (!place.geometry) return;
-
-            map.panTo(place.geometry.location);
-            map.setZoom(15);
-            marker.setPosition(place.geometry.location);
-            updateLatLng(place.geometry.location.lat(), place.geometry.location.lng());
-            alamatInput.value = place.formatted_address || searchInput.value;
-        });
-
-        // Fungsi bantu update input hidden
-        function updateLatLng(lat, lng) {
-            latInput.value = lat;
-            lngInput.value = lng;
-        }
-
-        // Fungsi reverse geocoding → isi alamat otomatis
-        function reverseGeocode(latLng) {
-            const geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: latLng }, function (results, status) {
-                if (status === "OK" && results[0]) {
-                    alamatInput.value = results[0].formatted_address;
-                }
-            });
-        }
+    function updateLatLng(lat, lng) {
+        latInput.value = lat;
+        lngInput.value = lng;
     }
 
-    // Tunggu sampai Google Maps siap
-    const waitForGoogle = setInterval(() => {
-        if (typeof google !== "undefined" && google.maps) {
-            clearInterval(waitForGoogle);
-            initMap();
+    function reverseGeocode(lat, lng) {
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.display_name && alamatInput) {
+                    alamatInput.value = data.display_name;
+                }
+            });
+    }
+
+    // Klik peta → pindah marker
+    map.on('click', function (e) {
+        marker.setLatLng(e.latlng);
+        updateLatLng(e.latlng.lat, e.latlng.lng);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Drag marker → update lat/lng
+    marker.on('dragend', function () {
+        const pos = marker.getLatLng();
+        updateLatLng(pos.lat, pos.lng);
+        reverseGeocode(pos.lat, pos.lng);
+    });
+
+    // Pencarian via Nominatim
+    let searchTimeout;
+    searchInput.addEventListener('input', function () {
+        clearTimeout(searchTimeout);
+        const query = searchInput.value.trim();
+        if (query.length < 3) { searchResults.style.display = 'none'; return; }
+
+        searchTimeout = setTimeout(() => {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=id`)
+                .then(res => res.json())
+                .then(results => {
+                    searchResults.innerHTML = '';
+                    if (!results.length) { searchResults.style.display = 'none'; return; }
+
+                    results.forEach(place => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item list-group-item-action';
+                        li.style.cursor = 'pointer';
+                        li.textContent = place.display_name;
+                        li.addEventListener('click', function () {
+                            const lat = parseFloat(place.lat);
+                            const lng = parseFloat(place.lon);
+                            map.setView([lat, lng], 15);
+                            marker.setLatLng([lat, lng]);
+                            updateLatLng(lat, lng);
+                            if (alamatInput) alamatInput.value = place.display_name;
+                            searchInput.value = place.display_name;
+                            searchResults.style.display = 'none';
+                        });
+                        searchResults.appendChild(li);
+                    });
+                    searchResults.style.display = 'block';
+                });
+        }, 400);
+    });
+
+    // Tutup dropdown saat klik di luar
+    document.addEventListener('click', function (e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.style.display = 'none';
         }
-    }, 300);
+    });
 });
 </script>
 @endpush

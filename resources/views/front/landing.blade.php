@@ -3,16 +3,23 @@
 @section('title', 'Parestay - Temukan Kost Impianmu')
 
 @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* InfoBox custom styling for Google Maps padding */
-        .gm-style .gm-style-iw-c { padding: 0 !important; border-radius: 0.5rem; overflow: hidden; }
-        .gm-style .gm-style-iw-d { overflow: hidden !important; }
+        #map { height: 500px; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 0; }
+        .kost-marker {
+            background: #10b981;
+            color: #fff;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 3px 7px;
+            border-radius: 12px;
+            white-space: nowrap;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .kost-marker.unverified { background: #5F9EA0; }
     </style>
 @endpush
-
-@section('extra-styles')
-    #map { height: 500px; border-radius: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-@endsection
 
 @section('content')
 
@@ -197,64 +204,28 @@
 @endsection
 
 @push('scripts')
-    {{-- Google Maps API: The callback specifies the initMap function --}}
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMap&loading=async"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map;
         let markers = [];
-        let infoWindow;
 
-        // 🗺️ Inisialisasi Peta (Google Maps)
-        window.initMap = function() {
-            // Koordinat Kampung Inggris Pare, Kediri
-            const pareLocation = { lat: -7.760074, lng: 112.180252 };
+        function formatHarga(harga) {
+            if (harga >= 1_000_000) return (harga / 1_000_000).toFixed(1).replace('.0', '') + ' jt';
+            if (harga >= 1_000) return (harga / 1_000).toFixed(0) + ' rb';
+            return harga.toString();
+        }
 
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: pareLocation,
-                zoom: 14,
-                mapTypeId: 'roadmap',
-                styles: [
-                    {
-                        featureType: "poi",
-                        elementType: "labels",
-                        stylers: [{ visibility: "off" }]
-                    }
-                ]
-            });
-
-            infoWindow = new google.maps.InfoWindow();
-
+        function initMap() {
+            map = L.map('map').setView([-7.760074, 112.180252], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19,
+            }).addTo(map);
             loadKostsToMap();
         }
 
-        function formatHarga(harga) {
-            if (harga >= 1_000_000) {
-                return (harga / 1_000_000).toFixed(1).replace('.0', '') + ' jt';
-            } else if (harga >= 1_000) {
-                return (harga / 1_000).toFixed(0) + ' rb';
-            } else {
-                return harga.toString();
-            }
-        }
-
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                const targetId = this.getAttribute('href').substring(1);
-                const targetEl = document.getElementById(targetId);
-                if (!targetEl) return;
-
-                e.preventDefault();
-                const offset = targetEl.getBoundingClientRect().top + window.scrollY - 100; // offset navbar
-                window.scrollTo({
-                    top: offset,
-                    behavior: 'smooth'
-                });
-            });
-        });
-
-        // 🏠 Ambil & tampilkan kost di peta
         function loadKostsToMap() {
-            if (!map) return; // Guard clause if map is not loaded yet
+            if (!map) return;
 
             const formData = new FormData(document.getElementById('searchForm'));
             const params = new URLSearchParams(formData);
@@ -262,150 +233,97 @@
             fetch('{{ route('api.kosts') }}?' + params.toString())
                 .then(res => res.json())
                 .then(kosts => {
-                    // Hapus semua marker yang ada
-                    markers.forEach(m => m.setMap(null));
+                    markers.forEach(m => map.removeLayer(m));
                     markers = [];
 
                     kosts.forEach(kost => {
-                        if (kost.latitude && kost.longitude) {
-                            const markerColor = kost.terverifikasi ? '#10b981' : '#5F9EA0';
+                        if (!kost.latitude || !kost.longitude) return;
 
-                            // Marker dengan harga tercetak
-                            const marker = new google.maps.Marker({
-                                position: { lat: parseFloat(kost.latitude), lng: parseFloat(kost.longitude) },
-                                map: map,
-                                title: kost.nama,
-                                label: {
-                                    text: 'Rp ' + formatHarga(kost.harga),
-                                    color: '#000000',
-                                    fontSize: '11px',
-                                    fontWeight: 'bold',
-                                    className: 'map-label'
-                                },
-                                icon: {
-                                    path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
-                                    fillColor: markerColor,
-                                    fillOpacity: 1,
-                                    strokeColor: '#ffffff',
-                                    strokeWeight: 2,
-                                    scale: 1,
-                                    labelOrigin: new google.maps.Point(0, -28)
-                                }
-                            });
+                        const cls = kost.terverifikasi ? 'kost-marker' : 'kost-marker unverified';
+                        const icon = L.divIcon({
+                            className: '',
+                            html: `<div class="${cls}">Rp ${formatHarga(kost.harga)}</div>`,
+                            iconAnchor: [0, 0],
+                        });
 
-                            // Konten pop-up
-                            const popupContent = `
-                                <div style="padding: 12px; max-width: 200px; color: #333;">
-                                    <h3 style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">${kost.nama}</h3>
-                                    <p style="font-size: 13px; color: #666; margin-bottom: 8px;">${kost.alamat}</p>
-                                    <p style="font-size: 15px; font-weight: bold; color: #0d9488; margin-bottom: 8px;">Rp ${kost.harga.toLocaleString('id-ID')}/${kost.type_harga}</p>
-                                    <a href="/detail/${kost.id}" style="display: block; text-align: center; background-color: #14b8a6; color: white; padding: 8px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px;">Lihat Detail</a>
+                        const marker = L.marker([parseFloat(kost.latitude), parseFloat(kost.longitude)], { icon })
+                            .addTo(map)
+                            .bindPopup(`
+                                <div style="min-width:180px; color:#333;">
+                                    <h3 style="font-weight:bold; font-size:15px; margin-bottom:4px;">${kost.nama}</h3>
+                                    <p style="font-size:12px; color:#666; margin-bottom:6px;">${kost.alamat}</p>
+                                    <p style="font-size:14px; font-weight:bold; color:#0d9488; margin-bottom:8px;">Rp ${kost.harga.toLocaleString('id-ID')}/${kost.type_harga}</p>
+                                    <a href="/detail/${kost.id}" style="display:block; text-align:center; background:#14b8a6; color:#fff; padding:7px; border-radius:6px; text-decoration:none; font-weight:bold; font-size:13px;">Lihat Detail</a>
                                 </div>
-                            `;
+                            `);
 
-                            marker.addListener('click', () => {
-                                infoWindow.setContent(popupContent);
-                                infoWindow.open(map, marker);
-                            });
-
-                            markers.push(marker);
-                        }
+                        markers.push(marker);
                     });
                 });
         }
 
-        // 🔍 AJAX Search Handler
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initMap();
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    const targetEl = document.getElementById(this.getAttribute('href').substring(1));
+                    if (!targetEl) return;
+                    e.preventDefault();
+                    window.scrollTo({ top: targetEl.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
+                });
+            });
 
             const searchForm = document.getElementById('searchForm');
             const kostContainer = document.getElementById('kostContainer');
 
-            searchForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // ← Prevent reload
+            searchForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const params = new URLSearchParams(new FormData(searchForm));
 
-                const formData = new FormData(searchForm);
-                const params = new URLSearchParams(formData);
+                kostContainer.innerHTML = '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-teal-500"></i><p class="mt-4 text-gray-600">Mencari kost...</p></div>';
 
-                // Tampilkan loading
-                kostContainer.innerHTML =
-                    '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-teal-500"></i><p class="mt-4 text-gray-600">Mencari kost...</p></div>';
-
-                // AJAX Request
                 fetch('{{ route('landing') }}?' + params.toString(), {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        // Update kost cards
-                        kostContainer.innerHTML = data.html;
-
-                        // Update peta
-                        loadKostsToMap();
-
-                        // Smooth scroll ke section kost
-                        document.getElementById('kost').scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-
-                        // Update URL tanpa reload
-                        const url = new URL(window.location);
-                        url.search = params.toString();
-                        window.history.pushState({}, '', url);
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        kostContainer.innerHTML =
-                            '<div class="col-span-full text-center py-12 text-red-500"><i class="fas fa-exclamation-circle text-4xl mb-4"></i><p>Terjadi kesalahan. Silakan coba lagi.</p></div>';
-                    });
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    kostContainer.innerHTML = data.html;
+                    loadKostsToMap();
+                    document.getElementById('kost').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const url = new URL(window.location);
+                    url.search = params.toString();
+                    window.history.pushState({}, '', url);
+                })
+                .catch(() => {
+                    kostContainer.innerHTML = '<div class="col-span-full text-center py-12 text-red-500"><i class="fas fa-exclamation-circle text-4xl mb-4"></i><p>Terjadi kesalahan. Silakan coba lagi.</p></div>';
+                });
             });
 
-            // ➡️ AJAX Pagination Handler
-            kostContainer.addEventListener('click', function(e) {
+            kostContainer.addEventListener('click', function (e) {
                 const link = e.target.closest('nav[role="navigation"] a');
                 if (!link) return;
-
                 e.preventDefault();
-                const url = new URL(link.href);
-                const params = new URLSearchParams(url.search);
+                const params = new URLSearchParams(new URL(link.href).search);
 
-                kostContainer.innerHTML =
-                    '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-teal-500"></i><p class="mt-4 text-gray-600">Memuat halaman...</p></div>';
+                kostContainer.innerHTML = '<div class="col-span-full text-center py-12"><i class="fas fa-spinner fa-spin text-4xl text-teal-500"></i><p class="mt-4 text-gray-600">Memuat halaman...</p></div>';
 
                 fetch('{{ route('landing') }}?' + params.toString(), {
-                        method: 'GET',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        kostContainer.innerHTML = data.html;
-                        loadKostsToMap();
-                        document.getElementById('kost').scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-
-                        const newUrl = new URL(window.location);
-                        newUrl.search = params.toString();
-                        window.history.pushState({}, '', newUrl);
-                    })
-                    .catch(error => {
-                        console.error('Error pagination:', error);
-                    });
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    kostContainer.innerHTML = data.html;
+                    loadKostsToMap();
+                    document.getElementById('kost').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const newUrl = new URL(window.location);
+                    newUrl.search = params.toString();
+                    window.history.pushState({}, '', newUrl);
+                })
+                .catch(err => console.error('Error pagination:', err));
             });
 
-            // Handle browser back/forward
-            window.addEventListener('popstate', function() {
-                searchForm.submit();
-            });
+            window.addEventListener('popstate', () => searchForm.submit());
         });
     </script>
 @endpush
