@@ -1,4 +1,40 @@
 <x-app-layout>
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="text-muted small mb-1">Total Booking</div>
+                    <div class="fs-4 fw-bold text-primary">{{ $stats['total'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="text-muted small mb-1">Sudah Bayar</div>
+                    <div class="fs-4 fw-bold text-success">{{ $stats['sudah_bayar'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="text-muted small mb-1">Menunggu Bayar</div>
+                    <div class="fs-4 fw-bold text-warning">{{ $stats['pending'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="text-muted small mb-1">Total Pendapatan</div>
+                    <div class="fs-6 fw-bold text-success">Rp {{ number_format($stats['total_pendapatan'], 0, ',', '.') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bx bx-book-content me-2"></i> Data Booking Kost</h5>
@@ -42,7 +78,6 @@
         </div>
 
         <div class="card-body">
-            {{-- Alert sukses (jika ada notifikasi) --}}
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible">
                     <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
@@ -62,11 +97,15 @@
                             <th>Tanggal Selesai</th>
                             <th>Durasi</th>
                             <th>Total Harga</th>
-                            <th>Status</th>
+                            <th>Status Booking</th>
+                            <th>Status Pembayaran</th>
+                            <th>Metode</th>
+                            <th>Waktu Bayar</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($bookings as $booking)
+                            @php $pay = $booking->pembayaran; @endphp
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td>
@@ -76,7 +115,8 @@
                                     </small>
                                 </td>
                                 <td>
-                                    <strong>{{ $booking->kamar->nomor_kamar ?? '-' }}</strong>                                </td>
+                                    <strong>{{ $booking->kamar->nomor_kamar ?? '-' }}</strong>
+                                </td>
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar avatar-sm me-2">
@@ -92,16 +132,57 @@
                                 </td>
                                 <td>{{ $booking->tanggal_mulai?->format('d M Y') ?? '-' }}</td>
                                 <td>{{ $booking->tanggal_selesai?->format('d M Y') ?? '-' }}</td>
-                                <td>{{ $booking->durasi }} bulan</td>
+                                <td>{{ $booking->durasi_format }}</td>
                                 <td>{{ $booking->formatted_total_harga }}</td>
+                                <td>{{ $booking->getStatusLabel() }}</td>
                                 <td>
-                                    {{ $booking->getStatusLabel() }}
-
+                                    @if($pay)
+                                        @php
+                                            $ts = $pay->transaction_status;
+                                            $badge = match($ts) {
+                                                'settlement', 'capture' => 'success',
+                                                'pending'               => 'warning',
+                                                'deny', 'cancel',
+                                                'expire', 'failure'     => 'danger',
+                                                default                 => 'secondary',
+                                            };
+                                            $label = match($ts) {
+                                                'settlement', 'capture' => 'Lunas',
+                                                'pending'               => 'Menunggu',
+                                                'deny'                  => 'Ditolak',
+                                                'cancel'                => 'Dibatalkan',
+                                                'expire'                => 'Kedaluwarsa',
+                                                'failure'               => 'Gagal',
+                                                default                 => ucfirst($ts),
+                                            };
+                                        @endphp
+                                        <span class="badge bg-{{ $badge }}">{{ $label }}</span>
+                                    @else
+                                        <span class="badge bg-secondary">Belum Ada</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($pay && $pay->payment_type)
+                                        <span class="text-capitalize">
+                                            {{ $pay->bank ? strtoupper($pay->bank) . ' VA' : ucwords(str_replace('_', ' ', $pay->payment_type)) }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($pay && $pay->settlement_time)
+                                        <small>{{ \Carbon\Carbon::parse($pay->settlement_time)->format('d M Y H:i') }}</small>
+                                    @elseif($pay && $pay->transaction_time)
+                                        <small class="text-muted">{{ \Carbon\Carbon::parse($pay->transaction_time)->format('d M Y H:i') }}</small>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="12" class="text-center text-muted py-4">
                                     <i class="bx bx-book-content" style="font-size: 3rem;"></i>
                                     <p class="mt-2">Belum ada data booking</p>
                                 </td>
