@@ -25,18 +25,24 @@ class BookingController extends Controller
 
         $pemilikId = $user->pemilik->id;
 
-        $baseQuery = fn() => Booking::whereHas('kost', fn($q) => $q->where('owner_id', $pemilikId));
+        $paidBase = fn () => Booking::whereHas('kost', fn ($q) => $q->where('owner_id', $pemilikId))
+            ->whereHas('pembayaran', fn ($q) => $q->whereIn('transaction_status', ['settlement', 'capture']));
 
         $stats = [
-            'total'            => $baseQuery()->count(),
-            'sudah_bayar'      => $baseQuery()->whereIn('status', ['aktif', 'selesai'])->count(),
-            'pending'          => $baseQuery()->where('status', 'pending')->count(),
-            'total_pendapatan' => $baseQuery()->whereIn('status', ['aktif', 'selesai'])->sum('total_harga'),
+            'total_lunas'      => $paidBase()->count(),
+            'aktif'            => $paidBase()->where('status', 'aktif')->count(),
+            'selesai'          => $paidBase()->where('status', 'selesai')->count(),
+            'total_pendapatan' => $paidBase()->sum('total_harga'),
         ];
+
+        $tampilSemua = $request->boolean('tampil_semua');
 
         $bookings = Booking::with(['kost', 'kamar', 'user', 'pembayaran'])
             ->whereHas('kost', function ($query) use ($pemilikId) {
                 $query->where('owner_id', $pemilikId);
+            })
+            ->when(! $tampilSemua, function ($query) {
+                $query->whereHas('pembayaran', fn ($q) => $q->whereIn('transaction_status', ['settlement', 'capture']));
             })
             ->when($validated['status'] ?? null, function ($query, $status) {
                 $query->where('status', $status);
@@ -51,7 +57,7 @@ class BookingController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('pemilik.booking.index', compact('bookings', 'stats'));
+        return view('pemilik.booking.index', compact('bookings', 'stats', 'tampilSemua'));
     }
 
     public function export(Request $request)
@@ -70,10 +76,11 @@ class BookingController extends Controller
 
         $pemilikId = $user->pemilik->id;
 
-        $bookings = Booking::with(['kost', 'kamar', 'user'])
+        $bookings = Booking::with(['kost', 'kamar', 'user', 'pembayaran'])
             ->whereHas('kost', function ($query) use ($pemilikId) {
                 $query->where('owner_id', $pemilikId);
             })
+            ->whereHas('pembayaran', fn ($q) => $q->whereIn('transaction_status', ['settlement', 'capture']))
             ->when($validated['status'] ?? null, function ($query, $status) {
                 $query->where('status', $status);
             })
@@ -87,7 +94,7 @@ class BookingController extends Controller
             ->get();
 
         $totalHarga = $bookings->sum('total_harga');
-        $filters    = array_merge(['status' => null, 'tanggal_dari' => null, 'tanggal_sampai' => null], $validated);
+        $filters = array_merge(['status' => null, 'tanggal_dari' => null, 'tanggal_sampai' => null], $validated);
 
         return view('pemilik.booking.export', compact('bookings', 'totalHarga', 'filters'));
     }

@@ -48,7 +48,7 @@
     </div>
 
     <div class="header">
-        <h2>Laporan Data Booking Kost</h2>
+        <h2>Laporan Pembayaran Lunas</h2>
         <p>Dicetak pada {{ now()->format('d M Y, H:i') }} WIB</p>
     </div>
 
@@ -76,6 +76,8 @@
                     <th>Durasi</th>
                     <th>Total Harga</th>
                     <th>Status</th>
+                    <th>Metode Bayar</th>
+                    <th>Waktu Lunas</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,6 +109,13 @@
                             @endphp
                             <span class="badge {{ $badgeClass }}">{{ $booking->getStatusLabel() }}</span>
                         </td>
+                        <td>
+                            @php $pay = $booking->pembayaran; @endphp
+                            {{ $pay && $pay->bank ? strtoupper($pay->bank) . ' VA' : ($pay ? ucwords(str_replace('_', ' ', $pay->payment_type ?? '-')) : '-') }}
+                        </td>
+                        <td>
+                            {{ $pay && $pay->settlement_time ? \Carbon\Carbon::parse($pay->settlement_time)->format('d M Y H:i') : '-' }}
+                        </td>
                     </tr>
                 @endforeach
 
@@ -114,7 +123,7 @@
                 <tr class="total-row">
                     <td colspan="7" style="text-align:right;">TOTAL KESELURUHAN</td>
                     <td>Rp {{ number_format($totalHarga, 0, ',', '.') }}</td>
-                    <td></td>
+                    <td colspan="3"></td>
                 </tr>
             </tbody>
         </table>

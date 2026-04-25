@@ -1,27 +1,27 @@
 <x-app-layout>
-    <!-- Stats Cards -->
+    <!-- Stats Cards (data sudah bayar / lunas) -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card text-center border-0 shadow-sm">
                 <div class="card-body py-3">
-                    <div class="text-muted small mb-1">Total Booking</div>
-                    <div class="fs-4 fw-bold text-primary">{{ $stats['total'] }}</div>
+                    <div class="text-muted small mb-1">Total Lunas</div>
+                    <div class="fs-4 fw-bold text-primary">{{ $stats['total_lunas'] }}</div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card text-center border-0 shadow-sm">
                 <div class="card-body py-3">
-                    <div class="text-muted small mb-1">Sudah Bayar</div>
-                    <div class="fs-4 fw-bold text-success">{{ $stats['sudah_bayar'] }}</div>
+                    <div class="text-muted small mb-1">Aktif (Lunas)</div>
+                    <div class="fs-4 fw-bold text-success">{{ $stats['aktif'] }}</div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card text-center border-0 shadow-sm">
                 <div class="card-body py-3">
-                    <div class="text-muted small mb-1">Menunggu Bayar</div>
-                    <div class="fs-4 fw-bold text-warning">{{ $stats['pending'] }}</div>
+                    <div class="text-muted small mb-1">Selesai (Lunas)</div>
+                    <div class="fs-4 fw-bold text-info">{{ $stats['selesai'] }}</div>
                 </div>
             </div>
         </div>
@@ -39,14 +39,14 @@
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bx bx-book-content me-2"></i> Data Booking Kost</h5>
 
-            <form method="GET" action="{{ route('pemilik.booking.index') }}" class="d-flex flex-wrap gap-2">
-                <select name="status" class="form-select form-select-sm" style="width:auto">
+            <form method="GET" action="{{ route('pemilik.booking.index') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                {{-- <select name="status" class="form-select form-select-sm" style="width:auto">
                     <option value="">Semua Status</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Pembayaran</option>
                     <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                     <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                     <option value="dibatalkan" {{ request('status') === 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
-                </select>
+                </select> --}}
 
                 <input
                     type="date"
@@ -66,6 +66,12 @@
                     title="Tanggal mulai sampai"
                 >
 
+                <div class="form-check mb-0 ms-1">
+                    <input class="form-check-input" type="checkbox" name="tampil_semua" value="1" id="tampilSemua"
+                        {{ $tampilSemua ? 'checked' : '' }} onchange="this.form.submit()">
+                    <label class="form-check-label small" for="tampilSemua">Tampilkan semua</label>
+                </div>
+
                 <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
                 <a href="{{ route('pemilik.booking.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
             </form>
@@ -82,6 +88,13 @@
                 <div class="alert alert-success alert-dismissible">
                     <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
+            @if(! $tampilSemua)
+                <div class="alert alert-info py-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bx bx-info-circle"></i>
+                    <span class="small">Menampilkan data pembayaran <strong>lunas</strong> saja. Centang <em>Tampilkan semua</em> untuk melihat semua data.</span>
                 </div>
             @endif
 
