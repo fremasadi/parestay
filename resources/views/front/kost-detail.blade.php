@@ -119,7 +119,7 @@
                             {{ ucfirst($kost->jenis_kost) }}
                         </span>
                         <span class="text-gray-600">
-                            {{ $kost->kamars->filter(fn($k) => $k->is_available_now)->count() }} kamar tersedia
+                            {{ $kost->kamars->filter(fn($k) => $k->status !== 'nonaktif' && $k->is_available_now)->count() }} kamar tersedia
                         </span>
 
                         @if ($kost->terverifikasi)
@@ -137,14 +137,21 @@
                     @if ($kost->kamars->count() > 0)
                         <div class="space-y-4">
                             @foreach ($kost->kamars as $kamar)
-                                @php $tersedia = $kamar->is_available_now; @endphp
-                                <div class="border {{ $tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-orange-200 hover:border-orange-400' }} rounded-lg p-4 transition-colors cursor-pointer group"
-                                    onclick="selectRoom({{ $kamar->id }})">
+                                @php
+                                    $isNonaktif = $kamar->status === 'nonaktif';
+                                    $tersedia = !$isNonaktif && $kamar->is_available_now;
+                                @endphp
+                                <div class="border {{ $isNonaktif ? 'border-red-200 bg-red-50/40' : ($tersedia ? 'border-gray-200 hover:border-teal-500' : 'border-orange-200 hover:border-orange-400') }} rounded-lg p-4 transition-colors {{ $isNonaktif ? '' : 'cursor-pointer' }} group"
+                                    @if (!$isNonaktif) onclick="selectRoom({{ $kamar->id }})" @endif>
                                     <div class="flex justify-between items-start">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-3 mb-2">
                                                 <h3 class="text-lg font-semibold">Kamar {{ $kamar->nomor_kamar }}</h3>
-                                                @if ($tersedia)
+                                                @if ($isNonaktif)
+                                                    <span class="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                        Nonaktif
+                                                    </span>
+                                                @elseif ($tersedia)
                                                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
                                                         Tersedia
                                                     </span>
@@ -157,6 +164,12 @@
                                                     </span>
                                                 @endif
                                             </div>
+
+                                            @if ($isNonaktif)
+                                                <p class="text-sm text-red-600 mb-2">
+                                                    Kamar ini sedang dinonaktifkan dan belum bisa dipesan.
+                                                </p>
+                                            @endif
 
                                             @if ($kamar->luas_kamar)
                                                 <p class="text-sm text-gray-600 mb-2">
@@ -196,7 +209,12 @@
                                             </div>
                                             <div class="text-sm text-gray-500">/{{ $kamar->type_harga }}</div>
 
-                                            @if ($tersedia)
+                                            @if ($isNonaktif)
+                                                <button type="button" disabled
+                                                    class="mt-3 px-4 py-2 bg-red-100 text-red-500 rounded-lg text-sm cursor-not-allowed">
+                                                    Kamar Nonaktif
+                                                </button>
+                                            @elseif ($tersedia)
                                                 @auth
                                                     @if ($kost->terverifikasi)
                                                         <button type="button" onclick="bookRoom({{ $kamar->id }})"
@@ -322,7 +340,9 @@
 
                     <!-- Harga Range Info -->
                     @php
-                        $kamarTersedia = $kost->kamars->filter(fn($k) => $k->is_available_now);
+                        $kamarTersedia = $kost->kamars->filter(
+                            fn($k) => $k->status !== 'nonaktif' && $k->is_available_now,
+                        );
                         $minHarga = $kamarTersedia->min('harga');
                         $maxHarga = $kamarTersedia->max('harga');
                     @endphp
