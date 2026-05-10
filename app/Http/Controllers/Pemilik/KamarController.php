@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Pemilik;
 use App\Http\Controllers\Controller;
 use App\Models\Kamar;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class KamarController extends Controller
 {
@@ -77,11 +78,35 @@ class KamarController extends Controller
             'type_harga'   => 'required|in:harian,bulanan,tahunan',
             'luas_kamar'   => 'nullable|string|max:50',
             'fasilitas'    => 'nullable|string',
+            'images.*'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'delete_images.*' => 'nullable|string',
             'status'       => 'required|in:tersedia,dibooking,nonaktif',
         ]);
 
         $data = $request->only(['kost_id', 'nomor_kamar', 'harga', 'type_harga', 'luas_kamar', 'status']);
         $data['fasilitas'] = $request->fasilitas ?: '[]';
+
+        $existingImages = $kamar->images ?? [];
+        $deletedImages = $request->input('delete_images', []);
+
+        if (!empty($deletedImages)) {
+            $existingImages = array_values(array_filter($existingImages, function ($image) use ($deletedImages) {
+                return !in_array($image, $deletedImages, true);
+            }));
+
+            foreach ($deletedImages as $image) {
+                Storage::disk('public')->delete($image);
+            }
+        }
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('kamar-images', 'public');
+                $existingImages[] = $path;
+            }
+        }
+
+        $data['images'] = $existingImages;
 
         $kamar->update($data);
 
