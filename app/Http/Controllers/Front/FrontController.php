@@ -15,6 +15,7 @@ class FrontController extends Controller
         $globalVerifiedCount = Kost::whereHas('pemilik.user', function ($q) {
             $q->where('status', 'aktif');
         })->count();
+        $selectedKursus = null;
 
         $query = Kost::with([
             'reviews',
@@ -43,18 +44,18 @@ class FrontController extends Controller
         }
 
         if ($request->filled('kursus_id')) {
-            $kursus = Kursus::find($request->kursus_id);
+            $selectedKursus = Kursus::find($request->kursus_id);
 
-            if ($kursus) {
-                $this->applyDistanceSorting($query, $kursus);
+            if ($selectedKursus) {
+                $this->applyDistanceSorting($query, $selectedKursus);
             }
         } else {
             $query->orderBy('kamars_min_harga', 'asc');
         }
 
         $paginator = $query->paginate(6)->withQueryString();
-        $paginator->getCollection()->transform(function ($kost) {
-            $kost->jarak_km = isset($kost->jarak) ? round($kost->jarak, 2) : null;
+        $paginator->getCollection()->transform(function ($kost) use ($selectedKursus) {
+            $kost->jarak_km = $this->resolveDistanceKm($kost, $selectedKursus);
 
             return $kost;
         });
@@ -77,6 +78,7 @@ class FrontController extends Controller
 
     public function getKostsJson(Request $request)
     {
+        $selectedKursus = null;
         $query = Kost::with([
             'reviews',
             'pemilik.user',
@@ -88,10 +90,10 @@ class FrontController extends Controller
             ->withMin('kamars as kamars_min_harga', 'harga');
 
         if ($request->filled('kursus_id')) {
-            $kursus = Kursus::find($request->kursus_id);
+            $selectedKursus = Kursus::find($request->kursus_id);
 
-            if ($kursus) {
-                $this->applyDistanceSorting($query, $kursus);
+            if ($selectedKursus) {
+                $this->applyDistanceSorting($query, $selectedKursus);
             }
         }
 
@@ -117,7 +119,7 @@ class FrontController extends Controller
             $query->orderBy('kamars_min_harga', 'asc');
         }
 
-        $kosts = $query->get()->map(function ($kost) {
+        $kosts = $query->get()->map(function ($kost) use ($selectedKursus) {
             return [
                 'id' => $kost->id,
                 'nama' => $kost->nama,
@@ -132,7 +134,7 @@ class FrontController extends Controller
                 'terverifikasi' => (bool) $kost->terverifikasi,
                 'avg_rating' => round($kost->reviews()->avg('rating') ?? 0, 1),
                 'review_count' => $kost->reviews()->count(),
-                'jarak_km' => isset($kost->jarak) ? round($kost->jarak, 2) : null,
+                'jarak_km' => $this->resolveDistanceKm($kost, $selectedKursus),
             ];
         });
 
@@ -188,6 +190,33 @@ class FrontController extends Controller
             )
             ->orderByRaw('jarak IS NULL')
             ->orderBy('jarak', 'asc');
+    }
+
+    private function resolveDistanceKm(Kost $kost, ?Kursus $kursus): ?float
+    {
+        if (!$kursus) {
+            return null;
+        }
+
+        if (
+            $kursus->latitude === null ||
+            $kursus->longitude === null ||
+            $kost->latitude === null ||
+            $kost->longitude === null
+        ) {
+            return null;
+        }
+
+        if (isset($kost->jarak) && is_numeric($kost->jarak)) {
+            return round((float) $kost->jarak, 2);
+        }
+
+        return $this->calculateDistanceKm(
+            (float) $kursus->latitude,
+            (float) $kursus->longitude,
+            (float) $kost->latitude,
+            (float) $kost->longitude,
+        );
     }
 
     private function calculateDistanceKm(float $fromLat, float $fromLng, float $toLat, float $toLng): float

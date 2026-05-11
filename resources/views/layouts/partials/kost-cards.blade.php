@@ -39,6 +39,11 @@
                     <i class="fas fa-road mr-1"></i>
                     {{ $formattedJarak }} km dari lokasi dipilih
                 </p>
+            @elseif (request()->filled('kursus_id'))
+                <p class="text-gray-400 text-sm mb-4">
+                    <i class="fas fa-map-pin mr-1"></i>
+                    Jarak belum tersedia
+                </p>
             @else
                 <p class="mb-4"></p> {{-- untuk memberi jarak visual konsisten --}}
             @endif
