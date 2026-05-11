@@ -4,6 +4,7 @@
     <div class="bg-white rounded-2xl overflow-hidden shadow-lg card-hover">
         @php
             $images = $kost->images;
+            $detailUrl = route('detail', $kost->id) . (request()->filled('kursus_id') ? '?kursus_id=' . request('kursus_id') : '');
             $firstImage =
                 is_array($images) && count($images) > 0
                     ? asset('storage/' . $images[0])
@@ -30,10 +31,13 @@
                 {{ Str::limit($kost->alamat, 50) }}
             </p>
 
-            @if (!empty($kost->jarak_km))
+            @if ($kost->jarak_km !== null)
+                @php
+                    $formattedJarak = rtrim(rtrim(number_format($kost->jarak_km, 2, ',', '.'), '0'), ',');
+                @endphp
                 <p class="text-teal-500 text-sm font-semibold mb-4">
                     <i class="fas fa-road mr-1"></i>
-                    {{ $kost->jarak_km }} km dari kursus
+                    {{ $formattedJarak }} km dari lokasi dipilih
                 </p>
             @else
                 <p class="mb-4"></p> {{-- untuk memberi jarak visual konsisten --}}
@@ -82,7 +86,7 @@
                 </span>
             </div>
 
-            <a href="{{ route('detail', $kost->id) }}"
+            <a href="{{ $detailUrl }}"
                 class="mt-4 w-full block text-center py-3 btn-teal text-white rounded-lg font-semibold">
                 Lihat Detail
             </a>

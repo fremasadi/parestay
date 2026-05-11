@@ -101,6 +101,16 @@
                     <h1 class="text-3xl font-bold mb-2">{{ $kost->nama }}</h1>
                     <p class="text-gray-600 mb-4">{{ $kost->alamat }}</p>
 
+                    @if ($jarakKursusKm !== null)
+                        @php
+                            $formattedJarak = rtrim(rtrim(number_format($jarakKursusKm, 2, ',', '.'), '0'), ',');
+                        @endphp
+                        <div class="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-teal-50 text-teal-700 rounded-full text-sm font-semibold">
+                            <i class="fas fa-road"></i>
+                            <span>{{ $formattedJarak }} km dari {{ $selectedKursus->nama ?? 'lokasi dipilih' }}</span>
+                        </div>
+                    @endif
+
                     <div class="flex items-center gap-3 mb-4">
                         @php
                             $avgRating = $kost->reviews()->avg('rating') ?? 0;
