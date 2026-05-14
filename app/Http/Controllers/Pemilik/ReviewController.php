@@ -44,6 +44,26 @@ class ReviewController extends Controller
         return view('pemilik.reviews.show', compact('review'));
     }
 
+    public function reply(Request $request, Review $review)
+    {
+        $pemilik = Auth::user()->owner;
+
+        if (!$pemilik || $review->kost->owner_id !== $pemilik->id) {
+            abort(403, 'Anda tidak memiliki akses ke review ini.');
+        }
+
+        $validated = $request->validate([
+            'balasan_pemilik' => 'required|string|max:1000',
+        ]);
+
+        $review->update([
+            'balasan_pemilik' => $validated['balasan_pemilik'],
+            'balasan_pemilik_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Balasan review berhasil disimpan.');
+    }
+
     // Statistik review untuk semua kost pemilik
     public function statistics()
     {

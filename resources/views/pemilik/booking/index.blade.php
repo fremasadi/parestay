@@ -40,6 +40,15 @@
             <h5 class="mb-0"><i class="bx bx-book-content me-2"></i> Data Booking Kost</h5>
 
             <form method="GET" action="{{ route('pemilik.booking.index') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                <select name="kost_id" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="">Semua Kost</option>
+                    @foreach($kosts as $kost)
+                        <option value="{{ $kost->id }}" {{ request('kost_id') == $kost->id ? 'selected' : '' }}>
+                            {{ $kost->nama }}
+                        </option>
+                    @endforeach
+                </select>
+
                 {{-- <select name="status" class="form-select form-select-sm" style="width:auto">
                     <option value="">Semua Status</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Pembayaran</option>

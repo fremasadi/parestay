@@ -314,6 +314,21 @@
                                 </div>
                             </div>
                             <p class="text-gray-600">{{ $review->komentar }}</p>
+                            @if($review->balasan_pemilik)
+                                <div class="mt-3 ml-12 rounded-lg bg-teal-50 border border-teal-100 p-4">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm font-semibold text-teal-700">
+                                            Balasan Pemilik
+                                        </span>
+                                        @if($review->balasan_pemilik_at)
+                                            <span class="text-xs text-gray-400">
+                                                {{ $review->balasan_pemilik_at->diffForHumans() }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="text-sm text-gray-700">{{ $review->balasan_pemilik }}</p>
+                                </div>
+                            @endif
                             <small class="text-gray-400">{{ $review->created_at->diffForHumans() }}</small>
                         </div>
                     @empty

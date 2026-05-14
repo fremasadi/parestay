@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pemilik;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Kost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,6 +15,7 @@ class BookingController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
+            'kost_id' => 'nullable|integer|exists:kosts,id',
             'status' => 'nullable|in:pending,aktif,selesai,dibatalkan',
             'tanggal_dari' => 'nullable|date',
             'tanggal_sampai' => 'nullable|date|after_or_equal:tanggal_dari',
@@ -24,6 +26,9 @@ class BookingController extends Controller
         }
 
         $pemilikId = $user->pemilik->id;
+        $kosts = Kost::where('owner_id', $pemilikId)
+            ->orderBy('nama')
+            ->get();
 
         $paidBase = fn () => Booking::whereHas('kost', fn ($q) => $q->where('owner_id', $pemilikId))
             ->whereHas('pembayaran', fn ($q) => $q->whereIn('transaction_status', ['settlement', 'capture']));
@@ -47,6 +52,12 @@ class BookingController extends Controller
             ->when($validated['status'] ?? null, function ($query, $status) {
                 $query->where('status', $status);
             })
+            ->when($validated['kost_id'] ?? null, function ($query, $kostId) use ($pemilikId) {
+                $query->whereHas('kost', function ($kostQuery) use ($kostId, $pemilikId) {
+                    $kostQuery->where('owner_id', $pemilikId)
+                        ->where('id', $kostId);
+                });
+            })
             ->when($validated['tanggal_dari'] ?? null, function ($query, $tanggalDari) {
                 $query->whereDate('tanggal_mulai', '>=', $tanggalDari);
             })
@@ -57,7 +68,7 @@ class BookingController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('pemilik.booking.index', compact('bookings', 'stats', 'tampilSemua'));
+        return view('pemilik.booking.index', compact('bookings', 'stats', 'tampilSemua', 'kosts'));
     }
 
     public function export(Request $request)
@@ -65,6 +76,7 @@ class BookingController extends Controller
         $user = Auth::user();
 
         $validated = $request->validate([
+            'kost_id' => 'nullable|integer|exists:kosts,id',
             'status' => 'nullable|in:pending,aktif,selesai,dibatalkan',
             'tanggal_dari' => 'nullable|date',
             'tanggal_sampai' => 'nullable|date|after_or_equal:tanggal_dari',
@@ -84,6 +96,12 @@ class BookingController extends Controller
             ->when($validated['status'] ?? null, function ($query, $status) {
                 $query->where('status', $status);
             })
+            ->when($validated['kost_id'] ?? null, function ($query, $kostId) use ($pemilikId) {
+                $query->whereHas('kost', function ($kostQuery) use ($kostId, $pemilikId) {
+                    $kostQuery->where('owner_id', $pemilikId)
+                        ->where('id', $kostId);
+                });
+            })
             ->when($validated['tanggal_dari'] ?? null, function ($query, $tanggalDari) {
                 $query->whereDate('tanggal_mulai', '>=', $tanggalDari);
             })
@@ -94,7 +112,7 @@ class BookingController extends Controller
             ->get();
 
         $totalHarga = $bookings->sum('total_harga');
-        $filters = array_merge(['status' => null, 'tanggal_dari' => null, 'tanggal_sampai' => null], $validated);
+        $filters = array_merge(['kost_id' => null, 'status' => null, 'tanggal_dari' => null, 'tanggal_sampai' => null], $validated);
 
         return view('pemilik.booking.export', compact('bookings', 'totalHarga', 'filters'));
     }

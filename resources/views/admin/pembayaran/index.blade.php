@@ -1,7 +1,23 @@
 <x-app-layout>
     <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="mb-0"><i class="bx bx-credit-card me-2"></i> Manajemen Pembayaran</h5>
+
+            <form method="GET" action="{{ route('admin.pembayaran.index') }}" class="d-flex flex-wrap gap-2 align-items-center">
+                <select name="status" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    <option value="">Semua Status</option>
+                    @foreach($statusOptions as $value => $label)
+                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filter</button>
+                @if(request()->filled('status'))
+                    <a href="{{ route('admin.pembayaran.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                @endif
+            </form>
         </div>
 
         <div class="card-body">
@@ -54,8 +70,7 @@
                                 <td>{{ $pembayaran->getPaymentMethodLabel() }}</td>
                                 <td>{{ $pembayaran->formatted_amount }}</td>
                                 <td>
-                                                                            {{ $pembayaran->getStatusLabel() }}
-
+                                    {{ $pembayaran->getStatusLabel() }}
                                 </td>
                                 <td>
                                     <small>

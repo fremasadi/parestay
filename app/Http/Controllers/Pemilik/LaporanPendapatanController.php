@@ -48,6 +48,10 @@ class LaporanPendapatanController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'penarikan_page');
 
+        $adaPending = PenarikanDana::where('pemilik_id', $pemilikId)
+            ->whereIn('status', ['pending', 'diproses'])
+            ->exists();
+
         // Total sudah WD (selesai)
         $totalSudahWd = PenarikanDana::where('pemilik_id', $pemilikId)
             ->where('status', 'selesai')
@@ -61,6 +65,7 @@ class LaporanPendapatanController extends Controller
             'penarikanList',
             'totalSudahWd',
             'pemilik',
+            'adaPending',
         ));
     }
 
@@ -71,6 +76,12 @@ class LaporanPendapatanController extends Controller
         if (!$user->pemilik) {
             return redirect()->back()->with('error', 'Data pemilik tidak ditemukan.');
         }
+
+        $request->validate([
+            'nama_bank' => ['required', 'string', 'max:50'],
+            'rekening_tujuan' => ['required', 'string', 'max:50'],
+            'atas_nama' => ['required', 'string', 'max:100'],
+        ]);
 
         $pemilik = $user->pemilik;
 
@@ -107,9 +118,9 @@ class LaporanPendapatanController extends Controller
             'jumlah_bruto'     => $totalBruto,
             'biaya_admin'      => $biaya,
             'jumlah_bersih'    => $sisaWd,
-            'rekening_tujuan'  => $pemilik->rekening_bank,
-            'nama_bank'        => $pemilik->nama_bank,
-            'atas_nama'        => $pemilik->atas_nama,
+            'rekening_tujuan'  => $request->rekening_tujuan,
+            'nama_bank'        => $request->nama_bank,
+            'atas_nama'        => $request->atas_nama,
             'status'           => 'pending',
             'tanggal_pengajuan' => now(),
         ]);

@@ -9,7 +9,16 @@ class Pemilik extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'no_ktp', 'no_hp', 'alamat', 'rekening_bank', 'nama_bank', 'atas_nama',];
+    protected $fillable = [
+        'user_id',
+        'no_ktp',
+        'foto_ktp',
+        'no_hp',
+        'alamat',
+        'rekening_bank',
+        'nama_bank',
+        'atas_nama',
+    ];
 
     /**
      * Relasi ke User (setiap pemilik terhubung ke 1 user)

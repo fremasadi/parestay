@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PenarikanDana;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PenarikanDanaController extends Controller
 {
@@ -33,8 +34,9 @@ class PenarikanDanaController extends Controller
     public function updateStatus(Request $request, PenarikanDana $penarikan)
     {
         $request->validate([
-            'status'  => 'required|in:diproses,selesai,ditolak',
-            'catatan' => 'nullable|string|max:500',
+            'status'         => 'required|in:diproses,selesai,ditolak',
+            'catatan'        => 'nullable|string|max:500',
+            'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
         $data = [
@@ -44,6 +46,14 @@ class PenarikanDanaController extends Controller
 
         if ($request->status === 'selesai') {
             $data['tanggal_selesai'] = now();
+        }
+
+        if ($request->hasFile('bukti_transfer')) {
+            if ($penarikan->bukti_transfer) {
+                Storage::disk('public')->delete($penarikan->bukti_transfer);
+            }
+
+            $data['bukti_transfer'] = $request->file('bukti_transfer')->store('bukti-transfer-penarikan', 'public');
         }
 
         $penarikan->update($data);

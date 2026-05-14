@@ -61,11 +61,21 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible mb-4">
+            <i class="bx bx-x-circle me-1"></i> Periksa kembali data rekening penarikan.
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     {{-- Ajukan Penarikan --}}
     @php
         $sisaWd = $totalBersih - $totalSudahWd;
-        $adaPending = $penarikanList->where('status', 'pending')->count() + $penarikanList->where('status', 'diproses')->count() > 0;
         $sisaWdFormatted = 'Rp ' . number_format(max($sisaWd, 0), 0, ',', '.');
     @endphp
 
@@ -83,7 +93,7 @@
                         </strong>
                     </p>
                     <small class="text-muted">
-                        Dana akan ditransfer ke rekening:
+                        Rekening utama:
                         <strong>{{ $pemilik->nama_bank ?? '-' }}</strong>
                         a/n <strong>{{ $pemilik->atas_nama ?? '-' }}</strong>
                         No. <strong>{{ $pemilik->rekening_bank ?? '-' }}</strong>
@@ -95,18 +105,55 @@
                             <i class="bx bx-time-five me-1"></i> Ada pengajuan sedang diproses
                         </span>
                     @elseif($sisaWd > 0)
-                        <form action="{{ route('pemilik.laporan.ajukan') }}" method="POST"
-                              onsubmit="return confirm('Ajukan penarikan dana sebesar {{ $sisaWdFormatted }}?')">
-                            @csrf
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bx bx-send me-1"></i> Ajukan Penarikan
-                            </button>
-                        </form>
+                        <span class="badge bg-label-success px-3 py-2">Siap diajukan</span>
                     @else
                         <span class="badge bg-label-secondary px-3 py-2">Tidak ada saldo untuk ditarik</span>
                     @endif
                 </div>
             </div>
+
+            @if(!$adaPending && $sisaWd > 0)
+                <form action="{{ route('pemilik.laporan.ajukan') }}" method="POST" class="mt-4"
+                      onsubmit="return confirm('Ajukan penarikan dana sebesar {{ $sisaWdFormatted }}?')">
+                    @csrf
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nama Bank <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   name="nama_bank"
+                                   value="{{ old('nama_bank', $pemilik->nama_bank) }}"
+                                   class="form-control"
+                                   placeholder="Contoh: BCA"
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">No Rekening Tujuan <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   name="rekening_tujuan"
+                                   value="{{ old('rekening_tujuan', $pemilik->rekening_bank) }}"
+                                   class="form-control"
+                                   placeholder="Masukkan nomor rekening"
+                                   required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Atas Nama <span class="text-danger">*</span></label>
+                            <input type="text"
+                                   name="atas_nama"
+                                   value="{{ old('atas_nama', $pemilik->atas_nama) }}"
+                                   class="form-control"
+                                   placeholder="Nama pemilik rekening"
+                                   required>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-send me-1"></i> Ajukan Penarikan
+                        </button>
+                    </div>
+                </form>
+            @endif
         </div>
     </div>
 

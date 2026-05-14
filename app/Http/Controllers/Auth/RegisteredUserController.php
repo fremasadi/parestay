@@ -48,13 +48,16 @@ class RegisteredUserController extends Controller
             'password' => 'required|confirmed|min:8',
             'no_hp' => 'required|string',
             'no_ktp' => 'required|string|unique:pemiliks,no_ktp',
+            'foto_ktp' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'alamat' => 'required|string',
             'rekening_bank' => 'required|string',
             'nama_bank' => 'required|string',
             'atas_nama' => 'required|string',
         ]);
 
-        DB::transaction(function () use ($request) {
+        $fotoKtpPath = $request->file('foto_ktp')->store('pemilik_ktp', 'public');
+
+        DB::transaction(function () use ($request, $fotoKtpPath) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -66,6 +69,7 @@ class RegisteredUserController extends Controller
             Pemilik::create([
                 'user_id' => $user->id,
                 'no_ktp' => $request->no_ktp,
+                'foto_ktp' => $fotoKtpPath,
                 'no_hp' => $request->no_hp,
                 'alamat' => $request->alamat,
                 'rekening_bank' => $request->rekening_bank,

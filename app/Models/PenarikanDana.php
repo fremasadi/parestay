@@ -21,6 +21,7 @@ class PenarikanDana extends Model
         'atas_nama',
         'status',
         'catatan',
+        'bukti_transfer',
         'tanggal_pengajuan',
         'tanggal_selesai',
     ];

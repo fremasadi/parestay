@@ -10,6 +10,24 @@
                 </div>
 
                 <div class="card-body">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible">
+                            <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible">
+                            <i class="bx bx-error me-1"></i> Balasan belum bisa disimpan.
+                            <ul class="mb-0 mt-2">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
                     <div class="row">
                         <!-- Info Kost -->
                         <div class="col-md-6 mb-4">
@@ -105,15 +123,33 @@
                         </div>
                     </div>
 
-                    <!-- Response Section (Future Feature) -->
+                    <!-- Response Section -->
                     <div class="mt-4 p-3 border rounded bg-light">
                         <h6 class="mb-2">
                             <i class="bx bx-message-square-edit me-2"></i> Balas Review
                         </h6>
-                        <p class="text-muted mb-0">
-                            <i class="bx bx-info-circle me-1"></i> 
-                            Fitur balas review akan segera hadir. Anda akan dapat merespons review dari penyewa.
-                        </p>
+                        @if($review->balasan_pemilik)
+                            <div class="alert alert-info mb-3">
+                                <strong>Balasan saat ini:</strong><br>
+                                {{ $review->balasan_pemilik }}
+                                @if($review->balasan_pemilik_at)
+                                    <br><small>{{ $review->balasan_pemilik_at->format('d M Y H:i') }}</small>
+                                @endif
+                            </div>
+                        @endif
+                        <form action="{{ route('pemilik.reviews.reply', $review) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <textarea name="balasan_pemilik"
+                                      class="form-control mb-3"
+                                      rows="4"
+                                      maxlength="1000"
+                                      required
+                                      placeholder="Tulis balasan untuk review ini...">{{ old('balasan_pemilik', $review->balasan_pemilik) }}</textarea>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bx bx-save me-1"></i> Simpan Balasan
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

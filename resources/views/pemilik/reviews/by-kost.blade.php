@@ -50,6 +50,24 @@
                 </div>
 
                 <div class="card-body">
+                    @if(session('success'))
+                        <div class="alert alert-success alert-dismissible">
+                            <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+                    @if($errors->any())
+                        <div class="alert alert-danger alert-dismissible">
+                            <i class="bx bx-error me-1"></i> Balasan belum bisa disimpan.
+                            <ul class="mb-0 mt-2">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
+
                     @forelse($reviews as $review)
                         <div class="border rounded p-3 mb-3 {{ $loop->last ? '' : 'mb-3' }}">
                             <div class="d-flex justify-content-between align-items-start mb-3">
@@ -100,12 +118,24 @@
                                 </a>
                             </div>
 
-                            <!-- Response Section (Coming Soon) -->
-                            <div class="mt-3 p-2 bg-light rounded">
-                                <small class="text-muted">
-                                    <i class="bx bx-info-circle me-1"></i>
-                                    Fitur balas review segera hadir
-                                </small>
+                            <!-- Response Section -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                @if($review->balasan_pemilik)
+                                    <strong class="d-block mb-1">Balasan Pemilik:</strong>
+                                    <p class="mb-1">{{ $review->balasan_pemilik }}</p>
+                                    <small class="text-muted">{{ $review->balasan_pemilik_at?->format('d M Y H:i') }}</small>
+                                @else
+                                    <span class="badge bg-label-secondary">Belum dibalas</span>
+                                @endif
+                                <div class="mt-2">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalReply{{ $review->id }}">
+                                        <i class="bx bx-message-square-edit me-1"></i>
+                                        {{ $review->balasan_pemilik ? 'Edit Balasan' : 'Balas Review' }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     @empty
@@ -124,4 +154,36 @@
             </div>
         </div>
     </div>
+
+    @foreach($reviews as $review)
+        <div class="modal fade" id="modalReply{{ $review->id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="{{ route('pemilik.reviews.reply', $review) }}" method="POST">
+                        @csrf
+                        @method('PATCH')
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                {{ $review->balasan_pemilik ? 'Edit Balasan Review' : 'Balas Review' }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted">{{ $review->komentar ?: '-' }}</p>
+                            <label class="form-label">Balasan <span class="text-danger">*</span></label>
+                            <textarea name="balasan_pemilik"
+                                      class="form-control"
+                                      rows="4"
+                                      maxlength="1000"
+                                      required>{{ old('balasan_pemilik', $review->balasan_pemilik) }}</textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan Balasan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endforeach
 </x-app-layout>

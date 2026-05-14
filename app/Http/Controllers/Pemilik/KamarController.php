@@ -4,20 +4,38 @@ namespace App\Http\Controllers\Pemilik;
 
 use App\Http\Controllers\Controller;
 use App\Models\Kamar;
+use App\Models\Kost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class KamarController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $kamars = Kamar::with('kost')
-            ->whereHas('kost', function ($query) {
-                $query->where('owner_id', auth()->user()->pemilik->id);
-            })
-            ->paginate(10);
+        $pemilik = auth()->user()->pemilik;
 
-        return view('pemilik.kamar.index', compact('kamars'));
+        if (!$pemilik) {
+            abort(403, 'Akun ini bukan pemilik kost');
+        }
+
+        $kosts = Kost::where('owner_id', $pemilik->id)
+            ->orderBy('nama')
+            ->get();
+
+        $kamars = Kamar::with('kost')
+            ->whereHas('kost', function ($query) use ($pemilik) {
+                $query->where('owner_id', $pemilik->id);
+            })
+            ->when($request->filled('kost_id'), function ($query) use ($request, $pemilik) {
+                $query->whereHas('kost', function ($kostQuery) use ($request, $pemilik) {
+                    $kostQuery->where('owner_id', $pemilik->id)
+                        ->where('id', $request->kost_id);
+                });
+            })
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('pemilik.kamar.index', compact('kamars', 'kosts'));
     }
 
     public function create()

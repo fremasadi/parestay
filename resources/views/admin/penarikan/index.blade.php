@@ -44,6 +44,17 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible mb-4">
+            <i class="bx bx-x-circle me-1"></i> Periksa kembali input penarikan dana.
+            <ul class="mb-0 mt-2">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -76,6 +87,7 @@
                             <th>Jumlah Transfer</th>
                             <th>Tgl Pengajuan</th>
                             <th>Status</th>
+                            <th>Bukti Transfer</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -112,6 +124,17 @@
                                     @endif
                                 </td>
                                 <td>
+                                    @if($wd->bukti_transfer)
+                                        <a href="{{ asset('storage/' . $wd->bukti_transfer) }}"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="bx bx-file"></i> Lihat
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">-</span>
+                                    @endif
+                                </td>
+                                <td>
                                     @if(in_array($wd->status, ['pending', 'diproses']))
                                         <button type="button" class="btn btn-sm btn-outline-primary"
                                             data-bs-toggle="modal"
@@ -125,7 +148,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="10" class="text-center text-muted py-4">
                                     <i class="bx bx-transfer-alt" style="font-size:3rem;"></i>
                                     <p class="mt-2">Belum ada pengajuan penarikan dana</p>
                                 </td>
@@ -147,7 +170,7 @@
             <div class="modal fade" id="modalUpdate{{ $wd->id }}" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form action="{{ route('admin.penarikan.update', $wd) }}" method="POST">
+                        <form action="{{ route('admin.penarikan.update', $wd) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PATCH')
                             <div class="modal-header">
@@ -180,6 +203,18 @@
                                     <label class="form-label">Catatan (opsional)</label>
                                     <textarea name="catatan" class="form-control" rows="3"
                                         placeholder="Misal: No. referensi transfer, alasan penolakan, dll.">{{ $wd->catatan }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Upload Bukti Transfer</label>
+                                    <input type="file" name="bukti_transfer" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
+                                    <small class="text-muted">Format JPG, PNG, atau PDF. Maksimal 2 MB.</small>
+                                    @if($wd->bukti_transfer)
+                                        <div class="mt-2">
+                                            <a href="{{ asset('storage/' . $wd->bukti_transfer) }}" target="_blank" class="small">
+                                                Lihat bukti transfer saat ini
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             <div class="modal-footer">

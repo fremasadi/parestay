@@ -14,10 +14,13 @@ class Review extends Model
         'reviewer_id',
         'rating',
         'komentar',
+        'balasan_pemilik',
+        'balasan_pemilik_at',
     ];
 
     protected $casts = [
         'rating' => 'integer',
+        'balasan_pemilik_at' => 'datetime',
     ];
 
     // Relasi ke Kost

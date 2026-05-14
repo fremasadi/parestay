@@ -43,14 +43,18 @@ class FrontController extends Controller
             });
         }
 
+        $sort = $request->input('sort');
+
         if ($request->filled('kursus_id')) {
             $selectedKursus = Kursus::find($request->kursus_id);
+        }
 
-            if ($selectedKursus) {
-                $this->applyDistanceSorting($query, $selectedKursus);
-            }
+        if (in_array($sort, ['harga_termurah', 'harga_tertinggi'], true)) {
+            $this->applyPriceSorting($query, $sort);
+        } elseif ($selectedKursus) {
+            $this->applyDistanceSorting($query, $selectedKursus);
         } else {
-            $query->orderBy('kamars_min_harga', 'asc');
+            $this->applyPriceSorting($query, 'harga_termurah');
         }
 
         $paginator = $query->paginate(6)->withQueryString();
@@ -89,12 +93,10 @@ class FrontController extends Controller
             })
             ->withMin('kamars as kamars_min_harga', 'harga');
 
+        $sort = $request->input('sort');
+
         if ($request->filled('kursus_id')) {
             $selectedKursus = Kursus::find($request->kursus_id);
-
-            if ($selectedKursus) {
-                $this->applyDistanceSorting($query, $selectedKursus);
-            }
         }
 
         if ($request->filled('jenis_kost') && $request->jenis_kost !== 'semua') {
@@ -115,8 +117,10 @@ class FrontController extends Controller
             });
         }
 
-        if ($request->filled('sort') && $request->sort === 'harga_termurah') {
-            $query->orderBy('kamars_min_harga', 'asc');
+        if (in_array($sort, ['harga_termurah', 'harga_tertinggi'], true)) {
+            $this->applyPriceSorting($query, $sort);
+        } elseif ($selectedKursus) {
+            $this->applyDistanceSorting($query, $selectedKursus);
         }
 
         $kosts = $query->get()->map(function ($kost) use ($selectedKursus) {
@@ -190,6 +194,15 @@ class FrontController extends Controller
             )
             ->orderByRaw('jarak IS NULL')
             ->orderBy('jarak', 'asc');
+    }
+
+    private function applyPriceSorting($query, string $sort): void
+    {
+        $direction = $sort === 'harga_tertinggi' ? 'desc' : 'asc';
+
+        $query
+            ->orderByRaw('kamars_min_harga IS NULL')
+            ->orderBy('kamars_min_harga', $direction);
     }
 
     private function resolveDistanceKm(Kost $kost, ?Kursus $kursus): ?float

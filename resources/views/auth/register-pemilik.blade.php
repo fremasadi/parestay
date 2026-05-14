@@ -34,7 +34,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('register.pemilik.store') }}">
+        <form method="POST" action="{{ route('register.pemilik.store') }}" enctype="multipart/form-data">
             @csrf
 
             <input name="name" placeholder="Nama Lengkap" value="{{ old('name') }}" required
@@ -54,6 +54,16 @@
 
             <input name="no_ktp" placeholder="No KTP" value="{{ old('no_ktp') }}" required
                 class="w-full mb-3 px-4 py-2 border rounded">
+
+            <div class="mb-3">
+                <label for="foto_ktp" class="block text-sm font-medium text-gray-700 mb-1">Foto KTP</label>
+                <input type="file" name="foto_ktp" id="foto_ktp" accept="image/*" required
+                    class="w-full px-4 py-2 border rounded file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                @error('foto_ktp')
+                    <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                @enderror
+                <p class="text-xs text-gray-500 mt-1">Format JPG atau PNG, maksimal 2 MB.</p>
+            </div>
 
             <textarea name="alamat" placeholder="Alamat Lengkap" required class="w-full mb-3 px-4 py-2 border rounded">{{ old('alamat') }}</textarea>
 

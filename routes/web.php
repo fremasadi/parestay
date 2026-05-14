@@ -99,6 +99,7 @@ Route::middleware(['auth', 'role:pemilik'])
         Route::get('/reviews', [PemilikReviewController::class, 'index'])->name('reviews.index');
         Route::get('/reviews/statistics', [PemilikReviewController::class, 'statistics'])->name('reviews.statistics');
         Route::get('/reviews/kost/{kost}', [PemilikReviewController::class, 'byKost'])->name('reviews.by-kost');
+        Route::patch('/reviews/{review}/reply', [PemilikReviewController::class, 'reply'])->name('reviews.reply');
         Route::get('/reviews/{review}', [PemilikReviewController::class, 'show'])->name('reviews.show');
 
         // Booking & Pembayaran Pemilik

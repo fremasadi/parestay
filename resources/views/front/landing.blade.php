@@ -125,6 +125,21 @@
                         <span id="hargaLabel">Rp 0</span>
                     </div>
 
+                    {{-- Urutan Harga --}}
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Urutkan</label>
+                        <select name="sort" id="sort"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                            <option value="" {{ request('sort') == '' ? 'selected' : '' }}>Default</option>
+                            <option value="harga_termurah" {{ request('sort') == 'harga_termurah' ? 'selected' : '' }}>
+                                Harga Terendah
+                            </option>
+                            <option value="harga_tertinggi" {{ request('sort') == 'harga_tertinggi' ? 'selected' : '' }}>
+                                Harga Tertinggi
+                            </option>
+                        </select>
+                    </div>
+
                     {{-- Tombol Cari --}}
                     <div class="flex items-end">
                         <button type="submit" class="px-8 py-3 btn-teal text-white rounded-lg font-semibold">
