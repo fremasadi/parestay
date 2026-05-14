@@ -191,11 +191,12 @@ class FrontController extends Controller
     private function applyRatingSorting($query, string $sort): void
     {
         $direction = $sort === 'rating_terendah' ? 'asc' : 'desc';
+        $reviewCountDirection = $sort === 'rating_terendah' ? 'asc' : 'desc';
 
         $query
             ->orderByRaw('CASE WHEN reviews_count = 0 THEN 1 ELSE 0 END ASC')
             ->orderBy('reviews_avg_rating', $direction)
-            ->orderBy('reviews_count', 'desc');
+            ->orderBy('reviews_count', $reviewCountDirection);
     }
 
     private function resolveDistanceKm(Kost $kost, ?Kursus $kursus): ?float
