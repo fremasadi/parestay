@@ -25,6 +25,8 @@ class FrontController extends Controller
             ->whereHas('pemilik.user', function ($q) {
                 $q->where('status', 'aktif');
             })
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->withMin('kamars as kamars_min_harga', 'harga');
 
         if ($request->filled('jenis_kost') && $request->jenis_kost !== 'semua') {
@@ -37,24 +39,18 @@ class FrontController extends Controller
             });
         }
 
-        if ($request->filled('harga_max')) {
-            $query->whereHas('kamars', function ($q) use ($request) {
-                $q->where('harga', '<=', $request->harga_max);
-            });
-        }
-
         $sort = $request->input('sort');
 
         if ($request->filled('kursus_id')) {
             $selectedKursus = Kursus::find($request->kursus_id);
         }
 
-        if (in_array($sort, ['harga_termurah', 'harga_tertinggi'], true)) {
-            $this->applyPriceSorting($query, $sort);
+        if (in_array($sort, ['rating_tertinggi', 'rating_terendah'], true)) {
+            $this->applyRatingSorting($query, $sort);
         } elseif ($selectedKursus) {
             $this->applyDistanceSorting($query, $selectedKursus);
         } else {
-            $this->applyPriceSorting($query, 'harga_termurah');
+            $this->applyRatingSorting($query, 'rating_tertinggi');
         }
 
         $paginator = $query->paginate(6)->withQueryString();
@@ -91,6 +87,8 @@ class FrontController extends Controller
             ->whereHas('pemilik.user', function ($q) {
                 $q->where('status', 'aktif');
             })
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
             ->withMin('kamars as kamars_min_harga', 'harga');
 
         $sort = $request->input('sort');
@@ -109,18 +107,12 @@ class FrontController extends Controller
             });
         }
 
-        if ($request->filled('harga_max')) {
-            $hargaMax = (int) preg_replace('/[^0-9]/', '', $request->harga_max);
-
-            $query->whereHas('kamars', function ($q) use ($hargaMax) {
-                $q->where('harga', '<=', $hargaMax);
-            });
-        }
-
-        if (in_array($sort, ['harga_termurah', 'harga_tertinggi'], true)) {
-            $this->applyPriceSorting($query, $sort);
+        if (in_array($sort, ['rating_tertinggi', 'rating_terendah'], true)) {
+            $this->applyRatingSorting($query, $sort);
         } elseif ($selectedKursus) {
             $this->applyDistanceSorting($query, $selectedKursus);
+        } else {
+            $this->applyRatingSorting($query, 'rating_tertinggi');
         }
 
         $kosts = $query->get()->map(function ($kost) use ($selectedKursus) {
@@ -196,13 +188,14 @@ class FrontController extends Controller
             ->orderBy('jarak', 'asc');
     }
 
-    private function applyPriceSorting($query, string $sort): void
+    private function applyRatingSorting($query, string $sort): void
     {
-        $direction = $sort === 'harga_tertinggi' ? 'desc' : 'asc';
+        $direction = $sort === 'rating_terendah' ? 'asc' : 'desc';
 
         $query
-            ->orderByRaw('kamars_min_harga IS NULL')
-            ->orderBy('kamars_min_harga', $direction);
+            ->orderByRaw('CASE WHEN reviews_count = 0 THEN 1 ELSE 0 END ASC')
+            ->orderBy('reviews_avg_rating', $direction)
+            ->orderBy('reviews_count', 'desc');
     }
 
     private function resolveDistanceKm(Kost $kost, ?Kursus $kursus): ?float

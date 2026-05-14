@@ -117,25 +117,17 @@
                         </select>
                     </div>
 
-                    {{-- Harga Maks --}}
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Harga Maksimal</label>
-                        <input type="range" name="harga_max" min="500000" max="5000000" step="50000"
-                            oninput="hargaLabel.innerText = 'Rp ' + this.value">
-                        <span id="hargaLabel">Rp 0</span>
-                    </div>
-
-                    {{-- Urutan Harga --}}
+                    {{-- Urutan Rating --}}
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Urutkan</label>
                         <select name="sort" id="sort"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent">
                             <option value="" {{ request('sort') == '' ? 'selected' : '' }}>Default</option>
-                            <option value="harga_termurah" {{ request('sort') == 'harga_termurah' ? 'selected' : '' }}>
-                                Harga Terendah
+                            <option value="rating_tertinggi" {{ request('sort') == 'rating_tertinggi' ? 'selected' : '' }}>
+                                Rating Tertinggi
                             </option>
-                            <option value="harga_tertinggi" {{ request('sort') == 'harga_tertinggi' ? 'selected' : '' }}>
-                                Harga Tertinggi
+                            <option value="rating_terendah" {{ request('sort') == 'rating_terendah' ? 'selected' : '' }}>
+                                Rating Terendah
                             </option>
                         </select>
                     </div>

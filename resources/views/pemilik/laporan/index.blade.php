@@ -175,6 +175,7 @@
                             <th>Rekening Tujuan</th>
                             <th>Status</th>
                             <th>Selesai</th>
+                            <th>Bukti Transfer</th>
                             <th>Catatan Admin</th>
                         </tr>
                     </thead>
@@ -200,12 +201,23 @@
                                 </td>
                                 <td>{{ $wd->tanggal_selesai?->format('d M Y') ?? '-' }}</td>
                                 <td>
+                                    @if($wd->bukti_transfer)
+                                        <a href="{{ asset('storage/' . $wd->bukti_transfer) }}"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="bx bx-file"></i> Lihat
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">-</span>
+                                    @endif
+                                </td>
+                                <td>
                                     <small class="text-muted">{{ $wd->catatan ?? '-' }}</small>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-4">
+                                <td colspan="10" class="text-center text-muted py-4">
                                     <i class="bx bx-transfer-alt" style="font-size:2.5rem;"></i>
                                     <p class="mt-2">Belum ada riwayat penarikan</p>
                                 </td>

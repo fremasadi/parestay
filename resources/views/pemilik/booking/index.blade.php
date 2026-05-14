@@ -49,13 +49,13 @@
                     @endforeach
                 </select>
 
-                {{-- <select name="status" class="form-select form-select-sm" style="width:auto">
+                <select name="status" class="form-select form-select-sm" style="width:auto">
                     <option value="">Semua Status</option>
                     <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Menunggu Pembayaran</option>
                     <option value="aktif" {{ request('status') === 'aktif' ? 'selected' : '' }}>Aktif</option>
                     <option value="selesai" {{ request('status') === 'selesai' ? 'selected' : '' }}>Selesai</option>
                     <option value="dibatalkan" {{ request('status') === 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
-                </select> --}}
+                </select>
 
                 <input
                     type="date"

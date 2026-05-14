@@ -85,3 +85,28 @@
         </div>
     </div>
 </div>
+
+@if ($errors->any())
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const validationErrors = @json($errors->all());
+                const escapeHtml = (value) => String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Data belum valid',
+                    html: '<ul class="text-start mb-0">' + validationErrors.map((error) => '<li>' + escapeHtml(error) + '</li>').join('') + '</ul>',
+                    confirmButtonText: 'Perbaiki',
+                    confirmButtonColor: '#696cff'
+                });
+            });
+        </script>
+    @endpush
+@endif

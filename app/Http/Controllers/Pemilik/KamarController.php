@@ -7,6 +7,7 @@ use App\Models\Kamar;
 use App\Models\Kost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class KamarController extends Controller
 {
@@ -53,13 +54,20 @@ class KamarController extends Controller
     {
         $request->validate([
             'kost_id' => 'required|exists:kosts,id',
-            'nomor_kamar' => 'required|string|max:50',
+            'nomor_kamar' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('kamars', 'nomor_kamar')->where(fn ($query) => $query->where('kost_id', $request->kost_id)),
+            ],
             'harga' => 'required|numeric|min:0',
             'type_harga' => 'required|in:harian,bulanan,tahunan',
             'luas_kamar' => 'nullable|string',
             'fasilitas' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|in:tersedia,dibooking,nonaktif',
+        ], [
+            'nomor_kamar.unique' => 'Nomor kamar sudah digunakan pada kost yang dipilih.',
         ]);
 
         $data = $request->only(['kost_id', 'nomor_kamar', 'harga', 'type_harga', 'luas_kamar', 'status']);
@@ -91,7 +99,14 @@ class KamarController extends Controller
     {
         $request->validate([
             'kost_id'      => 'required|exists:kosts,id',
-            'nomor_kamar'  => 'required|string|max:50',
+            'nomor_kamar'  => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('kamars', 'nomor_kamar')
+                    ->where(fn ($query) => $query->where('kost_id', $request->kost_id))
+                    ->ignore($kamar->id),
+            ],
             'harga'        => 'required|integer|min:0',
             'type_harga'   => 'required|in:harian,bulanan,tahunan',
             'luas_kamar'   => 'nullable|string|max:50',
@@ -99,6 +114,8 @@ class KamarController extends Controller
             'images.*'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'delete_images.*' => 'nullable|string',
             'status'       => 'required|in:tersedia,dibooking,nonaktif',
+        ], [
+            'nomor_kamar.unique' => 'Nomor kamar sudah digunakan pada kost yang dipilih.',
         ]);
 
         $data = $request->only(['kost_id', 'nomor_kamar', 'harga', 'type_harga', 'luas_kamar', 'status']);
