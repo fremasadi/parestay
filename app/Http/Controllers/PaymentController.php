@@ -160,6 +160,11 @@ class PaymentController extends Controller
                 }
             }
 
+            if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
+                $this->notifyOwnerPaymentSuccess($pembayaran);
+                $pembayaran->refresh();
+            }
+
             return view('payment.show', compact('pembayaran'));
         } catch (\Exception $e) {
             Log::error('Error in PaymentController@show', [
@@ -256,6 +261,11 @@ class PaymentController extends Controller
                 // Refresh data setelah update
                 $pembayaran->refresh();
 
+                if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
+                    $this->notifyOwnerPaymentSuccess($pembayaran);
+                    $pembayaran->refresh();
+                }
+
                 return response()->json([
                     'success' => true,
                     'status' => $pembayaran->transaction_status,
@@ -289,7 +299,6 @@ class PaymentController extends Controller
      */
     private function updatePaymentStatus($pembayaran, $data)
     {
-        $statusSebelumnya = $pembayaran->transaction_status;
         $transactionStatus = $data->transaction_status ?? ($data['transaction_status'] ?? 'pending');
         $fraudStatus = $data->fraud_status ?? ($data['fraud_status'] ?? null);
         $paymentType = $data->payment_type ?? ($data['payment_type'] ?? null);
@@ -365,9 +374,6 @@ class PaymentController extends Controller
                     'user_id'    => $booking->user_id,
                 ]);
 
-                if (!in_array($statusSebelumnya, ['settlement', 'capture'])) {
-                    $this->notifyOwnerPaymentSuccess($pembayaran);
-                }
             }
         }
 
@@ -391,6 +397,13 @@ class PaymentController extends Controller
         }
 
         $pembayaran->update($updateData);
+
+        if (
+            in_array($transactionStatus, ['settlement', 'capture'])
+            && !$pembayaran->owner_notified_at
+        ) {
+            $this->notifyOwnerPaymentSuccess($pembayaran->fresh());
+        }
     }
 
     private function notifyOwnerPaymentSuccess(Pembayaran $pembayaran): void
@@ -417,7 +430,20 @@ class PaymentController extends Controller
             . "Total: Rp " . number_format((float) $pembayaran->gross_amount, 0, ',', '.') . "\n"
             . "Status booking sekarang: aktif.";
 
+        Log::info('Mencoba kirim notifikasi pembayaran ke pemilik', [
+            'pembayaran_id' => $pembayaran->id,
+            'booking_id' => $booking->id,
+            'pemilik_id' => $pemilik->id,
+            'target' => $pemilik->no_hp,
+        ]);
+
         $sent = $this->fonnte->sendMessage($pemilik->no_hp, $message);
+
+        if ($sent) {
+            $pembayaran->update([
+                'owner_notified_at' => now(),
+            ]);
+        }
 
         Log::info('Notifikasi pembayaran ke pemilik diproses', [
             'pembayaran_id' => $pembayaran->id,

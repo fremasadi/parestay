@@ -23,6 +23,7 @@ class Pembayaran extends Model
         'fraud_status',
         'transaction_time',
         'settlement_time',
+        'owner_notified_at',
         'payment_url',
         'midtrans_response',
         'notes',
@@ -33,6 +34,7 @@ class Pembayaran extends Model
         'midtrans_response' => 'array',
         'transaction_time' => 'datetime',
         'settlement_time' => 'datetime',
+        'owner_notified_at' => 'datetime',
     ];
 
     /**
