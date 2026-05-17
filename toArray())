@@ -17,6 +17,6 @@
       Psy\Exception\ParseErrorException::fromParseError(Object(PhpParser\Error))
 
   2   vendor\psy\psysh\src\CodeCleaner.php:283
-      Psy\CodeCleaner::parse("<?php dump(App\\Models\\Pembayaran::with('booking.kost.pemilik')-,'status'=,'owner_notified_at'=,'booking_id'=,'pemilik_hp'=;
+      Psy\CodeCleaner::parse("<?php dump(App\\Models\\Pembayaran::with('booking')-,43)-,'booking_id'=,'payment_status'=,'owner_notified_at'=,'payment_created_at'=,'booking_status'=,'booking_created_at'=;
 ")
 

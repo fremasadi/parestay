@@ -345,6 +345,8 @@ class PaymentController extends Controller
             $sudahDiambil = Booking::where('kamar_id', $kamarId)
                 ->where('status', 'aktif')
                 ->where('id', '!=', $booking->id)
+                ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
+                ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
                 ->exists();
 
             if ($sudahDiambil) {

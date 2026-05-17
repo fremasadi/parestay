@@ -31,6 +31,7 @@ class SyncPaymentStatus extends Command
         $berubah = 0;
         $notifikasiTerkirim = 0;
         $gagalDicek = 0;
+        $bookingDipulihkan = 0;
 
         foreach ($pembayarans as $pembayaran) {
             $result = $this->midtrans->getTransactionStatus($pembayaran->order_id);
@@ -76,18 +77,30 @@ class SyncPaymentStatus extends Command
                 $booking = $pembayaran->booking;
 
                 if ($booking && $booking->status === 'pending') {
-                    $booking->update(['status' => 'aktif']);
-
-                    if ($booking->kamar) {
-                        $booking->kamar->update(['status' => 'dibooking']);
-                    }
-
-                    Booking::where('kamar_id', $booking->kamar_id)
-                        ->where('status', 'pending')
+                    $adaOverlapAktif = Booking::where('kamar_id', $booking->kamar_id)
+                        ->where('status', 'aktif')
                         ->where('id', '!=', $booking->id)
                         ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
                         ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
-                        ->update(['status' => 'dibatalkan']);
+                        ->exists();
+
+                    if ($adaOverlapAktif) {
+                        $booking->update(['status' => 'dibatalkan']);
+                        $updateData['notes'] = 'Otomatis dibatalkan: kamar sudah diambil penyewa lain yang lebih dulu bayar.';
+                    } else {
+                        $booking->update(['status' => 'aktif']);
+
+                        if ($booking->kamar) {
+                            $booking->kamar->update(['status' => 'dibooking']);
+                        }
+
+                        Booking::where('kamar_id', $booking->kamar_id)
+                            ->where('status', 'pending')
+                            ->where('id', '!=', $booking->id)
+                            ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
+                            ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
+                            ->update(['status' => 'dibatalkan']);
+                    }
                 }
             }
 
@@ -107,11 +120,42 @@ class SyncPaymentStatus extends Command
             }
         }
 
+        $pembayaranSuksesDibatalkan = Pembayaran::with('booking.kamar')
+            ->whereIn('transaction_status', ['settlement', 'capture'])
+            ->whereHas('booking', fn ($query) => $query->where('status', 'dibatalkan'))
+            ->get();
+
+        foreach ($pembayaranSuksesDibatalkan as $pembayaran) {
+            $booking = $pembayaran->booking;
+
+            if (!$booking) {
+                continue;
+            }
+
+            $adaOverlapAktif = Booking::where('kamar_id', $booking->kamar_id)
+                ->where('status', 'aktif')
+                ->where('id', '!=', $booking->id)
+                ->where('tanggal_mulai', '<', $booking->tanggal_selesai)
+                ->where('tanggal_selesai', '>', $booking->tanggal_mulai)
+                ->exists();
+
+            if (!$adaOverlapAktif) {
+                $booking->update(['status' => 'aktif']);
+
+                if ($booking->kamar) {
+                    $booking->kamar->update(['status' => 'dibooking']);
+                }
+
+                $bookingDipulihkan++;
+            }
+        }
+
         $this->info(
             "Selesai sync: {$pembayarans->count()} dicek, "
             . "{$berubah} berubah status, "
             . "{$notifikasiTerkirim} notifikasi terkirim, "
-            . "{$gagalDicek} gagal dicek."
+            . "{$gagalDicek} gagal dicek, "
+            . "{$bookingDipulihkan} booking sukses dipulihkan."
         );
 
         return self::SUCCESS;
