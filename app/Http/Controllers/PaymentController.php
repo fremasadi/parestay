@@ -6,6 +6,7 @@ use App\Models\Pembayaran;
 use App\Models\Booking;
 use App\Services\FonnteService;
 use App\Services\MidtransService;
+use App\Services\OwnerPaymentNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,11 +15,17 @@ class PaymentController extends Controller
 {
     protected $midtrans;
     protected $fonnte;
+    protected $ownerNotification;
 
-    public function __construct(MidtransService $midtrans, FonnteService $fonnte)
+    public function __construct(
+        MidtransService $midtrans,
+        FonnteService $fonnte,
+        OwnerPaymentNotificationService $ownerNotification
+    )
     {
         $this->midtrans = $midtrans;
         $this->fonnte = $fonnte;
+        $this->ownerNotification = $ownerNotification;
     }
 
     /**
@@ -161,7 +168,7 @@ class PaymentController extends Controller
             }
 
             if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
-                $this->notifyOwnerPaymentSuccess($pembayaran);
+                $this->ownerNotification->sendIfNeeded($pembayaran);
                 $pembayaran->refresh();
             }
 
@@ -262,7 +269,7 @@ class PaymentController extends Controller
                 $pembayaran->refresh();
 
                 if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
-                    $this->notifyOwnerPaymentSuccess($pembayaran);
+                    $this->ownerNotification->sendIfNeeded($pembayaran);
                     $pembayaran->refresh();
                 }
 
@@ -402,54 +409,7 @@ class PaymentController extends Controller
             in_array($transactionStatus, ['settlement', 'capture'])
             && !$pembayaran->owner_notified_at
         ) {
-            $this->notifyOwnerPaymentSuccess($pembayaran->fresh());
+            $this->ownerNotification->sendIfNeeded($pembayaran->fresh());
         }
-    }
-
-    private function notifyOwnerPaymentSuccess(Pembayaran $pembayaran): void
-    {
-        $pembayaran->loadMissing('booking.kost.pemilik');
-
-        $booking = $pembayaran->booking;
-        $kost = $booking?->kost;
-        $pemilik = $kost?->pemilik;
-
-        if (!$pemilik?->no_hp) {
-            Log::warning('Nomor HP pemilik tidak tersedia untuk notifikasi pembayaran', [
-                'pembayaran_id' => $pembayaran->id,
-                'booking_id' => $booking?->id,
-                'kost_id' => $kost?->id,
-            ]);
-
-            return;
-        }
-
-        $message = "Pembayaran berhasil diterima.\n"
-            . "Kost: {$kost->nama}\n"
-            . "Booking ID: {$booking->id}\n"
-            . "Total: Rp " . number_format((float) $pembayaran->gross_amount, 0, ',', '.') . "\n"
-            . "Status booking sekarang: aktif.";
-
-        Log::info('Mencoba kirim notifikasi pembayaran ke pemilik', [
-            'pembayaran_id' => $pembayaran->id,
-            'booking_id' => $booking->id,
-            'pemilik_id' => $pemilik->id,
-            'target' => $pemilik->no_hp,
-        ]);
-
-        $sent = $this->fonnte->sendMessage($pemilik->no_hp, $message);
-
-        if ($sent) {
-            $pembayaran->update([
-                'owner_notified_at' => now(),
-            ]);
-        }
-
-        Log::info('Notifikasi pembayaran ke pemilik diproses', [
-            'pembayaran_id' => $pembayaran->id,
-            'booking_id' => $booking->id,
-            'pemilik_id' => $pemilik->id,
-            'sent' => $sent,
-        ]);
     }
 }
