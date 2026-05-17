@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
 use App\Models\Booking;
+use App\Services\FonnteService;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,10 +13,12 @@ use Illuminate\Support\Facades\Log;
 class PaymentController extends Controller
 {
     protected $midtrans;
+    protected $fonnte;
 
-    public function __construct(MidtransService $midtrans)
+    public function __construct(MidtransService $midtrans, FonnteService $fonnte)
     {
         $this->midtrans = $midtrans;
+        $this->fonnte = $fonnte;
     }
 
     /**
@@ -286,6 +289,7 @@ class PaymentController extends Controller
      */
     private function updatePaymentStatus($pembayaran, $data)
     {
+        $statusSebelumnya = $pembayaran->transaction_status;
         $transactionStatus = $data->transaction_status ?? ($data['transaction_status'] ?? 'pending');
         $fraudStatus = $data->fraud_status ?? ($data['fraud_status'] ?? null);
         $paymentType = $data->payment_type ?? ($data['payment_type'] ?? null);
@@ -360,6 +364,10 @@ class PaymentController extends Controller
                     'kamar_id'   => $kamarId,
                     'user_id'    => $booking->user_id,
                 ]);
+
+                if (!in_array($statusSebelumnya, ['settlement', 'capture'])) {
+                    $this->notifyOwnerPaymentSuccess($pembayaran);
+                }
             }
         }
 
@@ -383,5 +391,39 @@ class PaymentController extends Controller
         }
 
         $pembayaran->update($updateData);
+    }
+
+    private function notifyOwnerPaymentSuccess(Pembayaran $pembayaran): void
+    {
+        $pembayaran->loadMissing('booking.kost.pemilik');
+
+        $booking = $pembayaran->booking;
+        $kost = $booking?->kost;
+        $pemilik = $kost?->pemilik;
+
+        if (!$pemilik?->no_hp) {
+            Log::warning('Nomor HP pemilik tidak tersedia untuk notifikasi pembayaran', [
+                'pembayaran_id' => $pembayaran->id,
+                'booking_id' => $booking?->id,
+                'kost_id' => $kost?->id,
+            ]);
+
+            return;
+        }
+
+        $message = "Pembayaran berhasil diterima.\n"
+            . "Kost: {$kost->nama}\n"
+            . "Booking ID: {$booking->id}\n"
+            . "Total: Rp " . number_format((float) $pembayaran->gross_amount, 0, ',', '.') . "\n"
+            . "Status booking sekarang: aktif.";
+
+        $sent = $this->fonnte->sendMessage($pemilik->no_hp, $message);
+
+        Log::info('Notifikasi pembayaran ke pemilik diproses', [
+            'pembayaran_id' => $pembayaran->id,
+            'booking_id' => $booking->id,
+            'pemilik_id' => $pemilik->id,
+            'sent' => $sent,
+        ]);
     }
 }

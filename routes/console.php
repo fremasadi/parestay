@@ -8,5 +8,5 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// Jalankan setiap hari jam 00:05 — update status booking yang sudah selesai / kadaluarsa
-Schedule::command('booking:update-status')->dailyAt('00:05');
+// Jalankan tiap jam agar pembayaran pending yang sudah lewat 24 jam cepat dibatalkan.
+Schedule::command('booking:update-status')->hourly()->withoutOverlapping();
