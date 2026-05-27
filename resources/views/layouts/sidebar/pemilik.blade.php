@@ -6,12 +6,19 @@
     </div>
     <ul class="menu-inner">
          {{-- Dashboard --}}
-         <li class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+        <li class="menu-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <a href="{{ route('dashboard') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home"></i>
                 <div>Dashboard</div>
             </a>
         </li>
+
+        <!-- <li class="menu-item {{ request()->routeIs('pemilik.profile.*') ? 'active' : '' }}">
+            <a href="{{ route('pemilik.profile.edit') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-user"></i>
+                <div>Profil Saya</div>
+            </a>
+        </li> -->
 
         <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Manajemen Kost</span>

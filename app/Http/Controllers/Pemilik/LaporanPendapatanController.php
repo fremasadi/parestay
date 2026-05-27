@@ -78,12 +78,33 @@ class LaporanPendapatanController extends Controller
         }
 
         $request->validate([
-            'nama_bank' => ['required', 'string', 'max:50'],
-            'rekening_tujuan' => ['required', 'string', 'max:50'],
-            'atas_nama' => ['required', 'string', 'max:100'],
+            'rekening_pilihan' => ['required', 'in:utama,kedua'],
         ]);
 
         $pemilik = $user->pemilik;
+
+        $rekeningDipilih = $request->rekening_pilihan === 'kedua'
+            ? [
+                'nama_bank' => $pemilik->nama_bank_2,
+                'rekening_tujuan' => $pemilik->rekening_bank_2,
+                'atas_nama' => $pemilik->atas_nama_2,
+            ]
+            : [
+                'nama_bank' => $pemilik->nama_bank,
+                'rekening_tujuan' => $pemilik->rekening_bank,
+                'atas_nama' => $pemilik->atas_nama,
+            ];
+
+        if (
+            blank($rekeningDipilih['nama_bank']) ||
+            blank($rekeningDipilih['rekening_tujuan']) ||
+            blank($rekeningDipilih['atas_nama'])
+        ) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Rekening yang dipilih belum lengkap. Silakan lengkapi dulu di profil pemilik.');
+        }
 
         // Cek apakah ada penarikan pending/diproses
         $adaPending = PenarikanDana::where('pemilik_id', $pemilik->id)
@@ -118,9 +139,9 @@ class LaporanPendapatanController extends Controller
             'jumlah_bruto'     => $totalBruto,
             'biaya_admin'      => $biaya,
             'jumlah_bersih'    => $sisaWd,
-            'rekening_tujuan'  => $request->rekening_tujuan,
-            'nama_bank'        => $request->nama_bank,
-            'atas_nama'        => $request->atas_nama,
+            'rekening_tujuan'  => $rekeningDipilih['rekening_tujuan'],
+            'nama_bank'        => $rekeningDipilih['nama_bank'],
+            'atas_nama'        => $rekeningDipilih['atas_nama'],
             'status'           => 'pending',
             'tanggal_pengajuan' => now(),
         ]);

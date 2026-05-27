@@ -39,9 +39,9 @@
                                     <p class="font-semibold">{{ Auth::user()->name }}</p>
                                     <p class="text-sm text-gray-500">{{ Auth::user()->email }}</p>
                                 </div>
-                                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600">
+                                <!-- <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600">
                                     Profil
-                                </a>
+                                </a> -->
                                 <a href="{{ route('history.index') }}" 
                                     class="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-teal-50 hover:text-teal-600 transition">
                                         Riwayat Booking

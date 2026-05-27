@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PenarikanDana;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PenarikanDanaController extends Controller
 {
@@ -33,16 +34,35 @@ class PenarikanDanaController extends Controller
 
     public function updateStatus(Request $request, PenarikanDana $penarikan)
     {
+        $allowedStatuses = match ($penarikan->status) {
+            'pending' => ['diproses'],
+            'diproses' => ['selesai'],
+            default => [],
+        };
+
+        if (empty($allowedStatuses)) {
+            return redirect()->back()->with('error', 'Status penarikan ini sudah final dan tidak bisa diubah lagi.');
+        }
+
         $request->validate([
-            'status'         => 'required|in:diproses,selesai,ditolak',
+            'status'         => ['required', Rule::in($allowedStatuses)],
             'catatan'        => 'nullable|string|max:500',
-            'bukti_transfer' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'bukti_transfer' => [
+                $request->status === 'selesai' ? 'required' : 'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:2048',
+            ],
         ]);
 
         $data = [
             'status'  => $request->status,
             'catatan' => $request->catatan,
         ];
+
+        if ($request->status === 'diproses') {
+            $data['tanggal_selesai'] = null;
+        }
 
         if ($request->status === 'selesai') {
             $data['tanggal_selesai'] = now();
@@ -61,7 +81,6 @@ class PenarikanDanaController extends Controller
         $label = match($request->status) {
             'diproses' => 'diubah ke Sedang Diproses',
             'selesai'  => 'ditandai Selesai (Dana Telah Ditransfer)',
-            'ditolak'  => 'ditolak',
         };
 
         return redirect()->back()->with('success', "Penarikan dana #{$penarikan->id} berhasil {$label}.");

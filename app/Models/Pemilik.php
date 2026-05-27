@@ -18,6 +18,9 @@ class Pemilik extends Model
         'rekening_bank',
         'nama_bank',
         'atas_nama',
+        'nama_bank_2',
+        'rekening_bank_2',
+        'atas_nama_2',
     ];
 
     /**

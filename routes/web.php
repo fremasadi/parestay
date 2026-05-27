@@ -21,6 +21,7 @@ use App\Http\Controllers\Pemilik\PembayaranController as PemilikPembayaranContro
 use App\Http\Controllers\Pemilik\ReviewController as PemilikReviewController;
 use App\Http\Controllers\Pemilik\KamarController as PemilikKamarController;
 use App\Http\Controllers\Pemilik\LaporanPendapatanController as PemilikLaporanController;
+use App\Http\Controllers\Pemilik\ProfileController as PemilikProfileController;
 
 // Front / Public Controllers
 use App\Http\Controllers\Front\FrontController;
@@ -91,6 +92,10 @@ Route::middleware(['auth', 'role:pemilik'])
     ->prefix('pemilik')
     ->name('pemilik.')
     ->group(function () {
+        // Profile Pemilik
+        Route::get('/profile', [PemilikProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [PemilikProfileController::class, 'update'])->name('profile.update');
+
         // Resource Kost Pemilik
         Route::resource('kost', PemilikKostController::class);
         Route::resource('kamar', PemilikKamarController::class); // pemilik.kost.*

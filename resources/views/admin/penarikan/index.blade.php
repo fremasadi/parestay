@@ -44,6 +44,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible mb-4">
+            <i class="bx bx-x-circle me-1"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
     @if($errors->any())
         <div class="alert alert-danger alert-dismissible mb-4">
             <i class="bx bx-x-circle me-1"></i> Periksa kembali input penarikan dana.
@@ -136,10 +142,12 @@
                                 </td>
                                 <td>
                                     @if(in_array($wd->status, ['pending', 'diproses']))
-                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                        <button type="button"
+                                            class="btn btn-sm {{ $wd->status === 'pending' ? 'btn-outline-primary' : 'btn-outline-success' }}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#modalUpdate{{ $wd->id }}">
-                                            <i class="bx bx-edit-alt"></i> Update
+                                            <i class="bx {{ $wd->status === 'pending' ? 'bx-loader-circle' : 'bx-check-circle' }}"></i>
+                                            {{ $wd->status === 'pending' ? 'Proses' : 'Selesaikan' }}
                                         </button>
                                     @else
                                         <span class="text-muted small">-</span>
@@ -173,8 +181,11 @@
                         <form action="{{ route('admin.penarikan.update', $wd) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="status" value="{{ $wd->status === 'pending' ? 'diproses' : 'selesai' }}">
                             <div class="modal-header">
-                                <h5 class="modal-title">Update Status Penarikan #{{ $wd->id }}</h5>
+                                <h5 class="modal-title">
+                                    {{ $wd->status === 'pending' ? 'Proses Penarikan' : 'Selesaikan Penarikan' }} #{{ $wd->id }}
+                                </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                             </div>
                             <div class="modal-body">
@@ -186,40 +197,41 @@
                                         {{ $wd->rekening_tujuan }} a/n {{ $wd->atas_nama }}
                                     </p>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Status Baru <span class="text-danger">*</span></label>
-                                    <select name="status" class="form-select" required>
-                                        @if($wd->status === 'pending')
-                                            <option value="diproses">Sedang Diproses</option>
-                                            <option value="ditolak">Tolak Pengajuan</option>
-                                        @endif
-                                        @if($wd->status === 'diproses')
-                                            <option value="selesai">Selesai (Dana Telah Ditransfer)</option>
-                                            <option value="ditolak">Tolak Pengajuan</option>
-                                        @endif
-                                    </select>
-                                </div>
+                                @if($wd->status === 'pending')
+                                    <div class="alert alert-info mb-3">
+                                        Penarikan ini akan diubah ke status <strong>Sedang Diproses</strong>.
+                                    </div>
+                                @endif
+                                @if($wd->status === 'diproses')
+                                    <div class="alert alert-success mb-3">
+                                        Penarikan ini akan ditandai <strong>Selesai</strong> setelah bukti transfer diunggah.
+                                    </div>
+                                @endif
                                 <div class="mb-3">
                                     <label class="form-label">Catatan (opsional)</label>
                                     <textarea name="catatan" class="form-control" rows="3"
-                                        placeholder="Misal: No. referensi transfer, alasan penolakan, dll.">{{ $wd->catatan }}</textarea>
+                                        placeholder="Misal: sedang dicek admin atau no. referensi transfer.">{{ $wd->catatan }}</textarea>
                                 </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Upload Bukti Transfer</label>
-                                    <input type="file" name="bukti_transfer" class="form-control" accept=".jpg,.jpeg,.png,.pdf">
-                                    <small class="text-muted">Format JPG, PNG, atau PDF. Maksimal 2 MB.</small>
-                                    @if($wd->bukti_transfer)
-                                        <div class="mt-2">
-                                            <a href="{{ asset('storage/' . $wd->bukti_transfer) }}" target="_blank" class="small">
-                                                Lihat bukti transfer saat ini
-                                            </a>
-                                        </div>
-                                    @endif
-                                </div>
+                                @if($wd->status === 'diproses')
+                                    <div class="mb-3">
+                                        <label class="form-label">Upload Bukti Transfer <span class="text-danger">*</span></label>
+                                        <input type="file" name="bukti_transfer" class="form-control" accept=".jpg,.jpeg,.png,.pdf" required>
+                                        <small class="text-muted">Format JPG, PNG, atau PDF. Maksimal 2 MB.</small>
+                                        @if($wd->bukti_transfer)
+                                            <div class="mt-2">
+                                                <a href="{{ asset('storage/' . $wd->bukti_transfer) }}" target="_blank" class="small">
+                                                    Lihat bukti transfer saat ini
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                                <button type="submit" class="btn btn-primary">Simpan</button>
+                                <button type="submit" class="btn {{ $wd->status === 'pending' ? 'btn-primary' : 'btn-success' }}">
+                                    {{ $wd->status === 'pending' ? 'Ubah ke Diproses' : 'Simpan & Selesaikan' }}
+                                </button>
                             </div>
                         </form>
                     </div>

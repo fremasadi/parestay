@@ -77,6 +77,24 @@
     @php
         $sisaWd = $totalBersih - $totalSudahWd;
         $sisaWdFormatted = 'Rp ' . number_format(max($sisaWd, 0), 0, ',', '.');
+        $rekeningOptions = collect([
+            [
+                'value' => 'utama',
+                'label' => 'Rekening Utama',
+                'nama_bank' => $pemilik->nama_bank,
+                'rekening' => $pemilik->rekening_bank,
+                'atas_nama' => $pemilik->atas_nama,
+            ],
+            [
+                'value' => 'kedua',
+                'label' => 'Rekening Kedua',
+                'nama_bank' => $pemilik->nama_bank_2,
+                'rekening' => $pemilik->rekening_bank_2,
+                'atas_nama' => $pemilik->atas_nama_2,
+            ],
+        ])->filter(fn ($rekening) => filled($rekening['nama_bank']) && filled($rekening['rekening']) && filled($rekening['atas_nama']))->values();
+        $selectedRekening = old('rekening_pilihan', $rekeningOptions->first()['value'] ?? 'utama');
+        $selectedRekeningData = $rekeningOptions->firstWhere('value', $selectedRekening) ?? $rekeningOptions->first();
     @endphp
 
     <div class="card mb-4">
@@ -93,10 +111,9 @@
                         </strong>
                     </p>
                     <small class="text-muted">
-                        Rekening utama:
-                        <strong>{{ $pemilik->nama_bank ?? '-' }}</strong>
-                        a/n <strong>{{ $pemilik->atas_nama ?? '-' }}</strong>
-                        No. <strong>{{ $pemilik->rekening_bank ?? '-' }}</strong>
+                        Rekening tersedia:
+                        <strong>{{ $rekeningOptions->count() }}</strong>
+                        {{ $rekeningOptions->count() > 1 ? 'pilihan rekening siap dipakai' : 'rekening siap dipakai' }}
                     </small>
                 </div>
                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
@@ -117,45 +134,82 @@
                       onsubmit="return confirm('Ajukan penarikan dana sebesar {{ $sisaWdFormatted }}?')">
                     @csrf
 
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Nama Bank <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   name="nama_bank"
-                                   value="{{ old('nama_bank', $pemilik->nama_bank) }}"
-                                   class="form-control"
-                                   placeholder="Contoh: BCA"
-                                   required>
+                    @if($rekeningOptions->isNotEmpty())
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Pilih Rekening Tujuan <span class="text-danger">*</span></label>
+                                <select name="rekening_pilihan" id="rekening_pilihan" class="form-select" required>
+                                    @foreach($rekeningOptions as $rekening)
+                                        <option
+                                            value="{{ $rekening['value'] }}"
+                                            data-bank="{{ $rekening['nama_bank'] }}"
+                                            data-rekening="{{ $rekening['rekening'] }}"
+                                            data-atas-nama="{{ $rekening['atas_nama'] }}"
+                                            {{ $selectedRekening === $rekening['value'] ? 'selected' : '' }}
+                                        >
+                                            {{ $rekening['label'] }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">Detail Rekening Terpilih</label>
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="mb-1">
+                                        <span class="text-muted">Bank:</span>
+                                        <strong id="previewNamaBank">{{ $selectedRekeningData['nama_bank'] ?? '-' }}</strong>
+                                    </div>
+                                    <div class="mb-1">
+                                        <span class="text-muted">Nomor Rekening:</span>
+                                        <strong id="previewNoRekening">{{ $selectedRekeningData['rekening'] ?? '-' }}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted">Atas Nama:</span>
+                                        <strong id="previewAtasNama">{{ $selectedRekeningData['atas_nama'] ?? '-' }}</strong>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">No Rekening Tujuan <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   name="rekening_tujuan"
-                                   value="{{ old('rekening_tujuan', $pemilik->rekening_bank) }}"
-                                   class="form-control"
-                                   placeholder="Masukkan nomor rekening"
-                                   required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Atas Nama <span class="text-danger">*</span></label>
-                            <input type="text"
-                                   name="atas_nama"
-                                   value="{{ old('atas_nama', $pemilik->atas_nama) }}"
-                                   class="form-control"
-                                   placeholder="Nama pemilik rekening"
-                                   required>
-                        </div>
-                    </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bx bx-send me-1"></i> Ajukan Penarikan
-                        </button>
-                    </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bx bx-send me-1"></i> Ajukan Penarikan
+                            </button>
+                        </div>
+                    @else
+                        <div class="alert alert-warning mt-3 mb-0">
+                            Lengkapi minimal satu rekening di profil pemilik terlebih dahulu sebelum mengajukan penarikan.
+                        </div>
+                    @endif
                 </form>
             @endif
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const rekeningSelect = document.getElementById('rekening_pilihan');
+                if (!rekeningSelect) return;
+
+                const previewNamaBank = document.getElementById('previewNamaBank');
+                const previewNoRekening = document.getElementById('previewNoRekening');
+                const previewAtasNama = document.getElementById('previewAtasNama');
+
+                function updatePreview() {
+                    const selectedOption = rekeningSelect.options[rekeningSelect.selectedIndex];
+                    if (!selectedOption) return;
+
+                    previewNamaBank.textContent = selectedOption.getAttribute('data-bank') || '-';
+                    previewNoRekening.textContent = selectedOption.getAttribute('data-rekening') || '-';
+                    previewAtasNama.textContent = selectedOption.getAttribute('data-atas-nama') || '-';
+                }
+
+                rekeningSelect.addEventListener('change', updatePreview);
+                updatePreview();
+            });
+        </script>
+    @endpush
 
     {{-- Riwayat Penarikan --}}
     <div class="card mb-4">

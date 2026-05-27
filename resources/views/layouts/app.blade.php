@@ -64,7 +64,11 @@
                                     <span class="ms-2">{{ Auth::user()->name ?? 'User' }}</span>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" href="#">Profil</a></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{{ Auth::user()->role === 'pemilik' ? route('pemilik.profile.edit') : route('profile.edit') }}">
+                                            Profil
+                                        </a>
+                                    </li>
                                     <li>
                                         <div class="dropdown-divider"></div>
                                     </li>

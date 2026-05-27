@@ -4,27 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Pembayaran;
 use App\Models\Booking;
-use App\Services\FonnteService;
 use App\Services\MidtransService;
 use App\Services\OwnerPaymentNotificationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
     protected $midtrans;
-    protected $fonnte;
     protected $ownerNotification;
 
     public function __construct(
         MidtransService $midtrans,
-        FonnteService $fonnte,
         OwnerPaymentNotificationService $ownerNotification
     )
     {
         $this->midtrans = $midtrans;
-        $this->fonnte = $fonnte;
         $this->ownerNotification = $ownerNotification;
     }
 
@@ -167,11 +162,6 @@ class PaymentController extends Controller
                 }
             }
 
-            if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
-                $this->ownerNotification->sendIfNeeded($pembayaran);
-                $pembayaran->refresh();
-            }
-
             return view('payment.show', compact('pembayaran'));
         } catch (\Exception $e) {
             Log::error('Error in PaymentController@show', [
@@ -268,11 +258,6 @@ class PaymentController extends Controller
                 // Refresh data setelah update
                 $pembayaran->refresh();
 
-                if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at) {
-                    $this->ownerNotification->sendIfNeeded($pembayaran);
-                    $pembayaran->refresh();
-                }
-
                 return response()->json([
                     'success' => true,
                     'status' => $pembayaran->transaction_status,
@@ -306,6 +291,7 @@ class PaymentController extends Controller
      */
     private function updatePaymentStatus($pembayaran, $data)
     {
+        $wasSuccess = $pembayaran->isSuccess();
         $transactionStatus = $data->transaction_status ?? ($data['transaction_status'] ?? 'pending');
         $fraudStatus = $data->fraud_status ?? ($data['fraud_status'] ?? null);
         $paymentType = $data->payment_type ?? ($data['payment_type'] ?? null);
@@ -406,12 +392,14 @@ class PaymentController extends Controller
         }
 
         $pembayaran->update($updateData);
+        $pembayaran->refresh();
 
         if (
-            in_array($transactionStatus, ['settlement', 'capture'])
+            !$wasSuccess
+            && $pembayaran->isSuccess()
             && !$pembayaran->owner_notified_at
         ) {
-            $this->ownerNotification->sendIfNeeded($pembayaran->fresh());
+            $this->ownerNotification->sendIfNeeded($pembayaran);
         }
     }
 }

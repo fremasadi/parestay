@@ -115,7 +115,7 @@ class SyncPaymentStatus extends Command
                 $berubah++;
             }
 
-            if ($this->ownerNotification->sendIfNeeded($pembayaran)) {
+            if ($pembayaran->isSuccess() && !$pembayaran->owner_notified_at && $this->ownerNotification->sendIfNeeded($pembayaran)) {
                 $notifikasiTerkirim++;
             }
         }
